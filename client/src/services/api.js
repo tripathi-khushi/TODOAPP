@@ -1,14 +1,97 @@
 /**
  * API Service for Smartech Todo Application
- * Handles communication with Express backend REST endpoints.
+ * Handles authenticated communication with Express backend REST endpoints.
  */
 
-const API_BASE_URL = '/api/todos';
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('smartech_token');
+  const headers = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
+};
 
 export const api = {
+  // ==================== AUTH APIS ====================
+
   /**
-   * Fetch all todos with optional query filters
-   * @param {Object} params - { search, status, category, priority, sortBy, order }
+   * Log in an existing user
+   */
+  async login(email, password) {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Login failed');
+    }
+    if (data.token) {
+      localStorage.setItem('smartech_token', data.token);
+    }
+    return data;
+  },
+
+  /**
+   * Register a new user
+   */
+  async register(userData) {
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(userData),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Registration failed');
+    }
+    if (data.token) {
+      localStorage.setItem('smartech_token', data.token);
+    }
+    return data;
+  },
+
+  /**
+   * Fetch current authenticated user from MongoDB
+   */
+  async getMe() {
+    const token = localStorage.getItem('smartech_token');
+    if (!token) return { success: true, user: null, isLoggedIn: false };
+
+    const res = await fetch('/api/auth/me', {
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) {
+      localStorage.removeItem('smartech_token');
+      return { success: true, user: null, isLoggedIn: false };
+    }
+    return res.json();
+  },
+
+  /**
+   * Update current user profile in MongoDB
+   */
+  async updateProfile(profileData) {
+    const res = await fetch('/api/auth/profile', {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(profileData),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to update profile');
+    }
+    return data;
+  },
+
+  // ==================== TODOS CRUD APIS ====================
+
+  /**
+   * Fetch todos from database
    */
   async getTodos(params = {}) {
     const query = new URLSearchParams();
@@ -18,8 +101,10 @@ export const api = {
       }
     });
 
-    const url = `${API_BASE_URL}${query.toString() ? `?${query.toString()}` : ''}`;
-    const res = await fetch(url);
+    const url = `/api/todos${query.toString() ? `?${query.toString()}` : ''}`;
+    const res = await fetch(url, {
+      headers: getAuthHeaders(),
+    });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.message || `Failed to fetch todos: ${res.statusText}`);
@@ -28,12 +113,13 @@ export const api = {
   },
 
   /**
-   * Fetch a single todo by its ID
-   * @param {string} id
+   * Fetch single todo by ID
    */
   async getTodoById(id) {
     if (!id) throw new Error('Todo ID is required');
-    const res = await fetch(`${API_BASE_URL}/${id}`);
+    const res = await fetch(`/api/todos/${id}`, {
+      headers: getAuthHeaders(),
+    });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.message || `Todo not found with ID ${id}`);
@@ -42,15 +128,12 @@ export const api = {
   },
 
   /**
-   * Create a new todo
-   * @param {Object} todoData
+   * Create a new todo in database
    */
   async createTodo(todoData) {
-    const res = await fetch(API_BASE_URL, {
+    const res = await fetch('/api/todos', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
       body: JSON.stringify(todoData),
     });
     if (!res.ok) {
@@ -61,16 +144,12 @@ export const api = {
   },
 
   /**
-   * Update an existing todo (full update)
-   * @param {string} id
-   * @param {Object} todoData
+   * Update an existing todo in database
    */
   async updateTodo(id, todoData) {
-    const res = await fetch(`${API_BASE_URL}/${id}`, {
+    const res = await fetch(`/api/todos/${id}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
       body: JSON.stringify(todoData),
     });
     if (!res.ok) {
@@ -81,16 +160,12 @@ export const api = {
   },
 
   /**
-   * Partial update (e.g. toggle complete status, add subtask)
-   * @param {string} id
-   * @param {Object} patchData
+   * Partial update
    */
   async patchTodo(id, patchData) {
-    const res = await fetch(`${API_BASE_URL}/${id}`, {
+    const res = await fetch(`/api/todos/${id}`, {
       method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
       body: JSON.stringify(patchData),
     });
     if (!res.ok) {
@@ -101,12 +176,12 @@ export const api = {
   },
 
   /**
-   * Delete a todo by ID
-   * @param {string} id
+   * Delete a todo from database
    */
   async deleteTodo(id) {
-    const res = await fetch(`${API_BASE_URL}/${id}`, {
+    const res = await fetch(`/api/todos/${id}`, {
       method: 'DELETE',
+      headers: getAuthHeaders(),
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
@@ -116,27 +191,15 @@ export const api = {
   },
 
   /**
-   * Fetch aggregated statistics for gauges and summary cards
+   * Fetch aggregated statistics computed dynamically from database
    */
   async getStats() {
-    const res = await fetch(`${API_BASE_URL}/stats`);
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.message || 'Failed to fetch statistics');
-    }
-    return res.json();
-  },
-
-  /**
-   * Re-seed sample todos
-   */
-  async seedTodos() {
-    const res = await fetch(`${API_BASE_URL}/seed`, {
-      method: 'POST',
+    const res = await fetch('/api/todos/stats', {
+      headers: getAuthHeaders(),
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.message || 'Failed to seed sample todos');
+      throw new Error(err.message || 'Failed to fetch statistics');
     }
     return res.json();
   },

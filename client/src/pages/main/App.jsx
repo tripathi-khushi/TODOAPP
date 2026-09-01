@@ -17,7 +17,7 @@ import ScheduleView from '../../components/ScheduleView';
 import MessagesView from '../../components/MessagesView';
 import SettingsView from '../../components/SettingsView';
 import { api } from '../../services/api';
-import { Plus, ListTodo } from 'lucide-react';
+import { Plus, ListTodo, LogIn } from 'lucide-react';
 import '../../styles/theme.css';
 import '../../styles/dashboard.css';
 
@@ -25,24 +25,9 @@ export function App() {
   // Active Navigation Tab State (dashboard, todos, classes, grades, schedule, messages, settings)
   const [activeTab, setActiveTab] = useState('dashboard');
 
-  // User Authentication State
-  const [currentUser, setCurrentUser] = useState(() => {
-    const saved = localStorage.getItem('smartech_user');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {}
-    }
-    return {
-      name: 'Khushi Tripathi',
-      email: 'khushi.tripathi@smartech.edu',
-      role: 'Student • Robotics Major',
-      studentId: 'ST-2026-8941',
-      major: 'Robotics & AI Engineering',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-      isLoggedIn: true,
-    };
-  });
+  // Real Authenticated User State from MongoDB (null if Guest)
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
@@ -52,10 +37,10 @@ export function App() {
     completed: 0,
     inProgress: 0,
     pending: 0,
-    completionRate: 75,
-    homeworkRate: 90,
-    attendanceRate: 60,
-    ratingScore: 75,
+    completionRate: 0,
+    homeworkRate: 0,
+    attendanceRate: 0,
+    ratingScore: 0,
     upcomingSchedule: [],
   });
   const [searchTerm, setSearchTerm] = useState('');
@@ -68,7 +53,6 @@ export function App() {
   const [editingTodo, setEditingTodo] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [isSeeding, setIsSeeding] = useState(false);
   const [toast, setToast] = useState(null);
 
   const showToast = (message, type = 'success') => {
@@ -95,29 +79,45 @@ export function App() {
     window.history.pushState({}, '', url);
   };
 
+  // Check current session from database on mount
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        setIsAuthLoading(true);
+        const res = await api.getMe();
+        if (res.success && res.user) {
+          setCurrentUser(res.user);
+        } else {
+          setCurrentUser(null);
+        }
+      } catch (err) {
+        console.warn('Session check failed:', err);
+        setCurrentUser(null);
+      } finally {
+        setIsAuthLoading(false);
+      }
+    };
+    initAuth();
+  }, []);
+
   // Auth Handlers
   const handleLoginSuccess = (user) => {
     setCurrentUser(user);
-    localStorage.setItem('smartech_user', JSON.stringify(user));
-    showToast(`Welcome, ${user.name}!`);
+    showToast(`Welcome back, ${user.name}!`);
+    loadTodos();
+    loadStats();
   };
 
   const handleUpdateUser = (updatedUser) => {
     setCurrentUser(updatedUser);
-    localStorage.setItem('smartech_user', JSON.stringify(updatedUser));
   };
 
   const handleLogout = () => {
-    const loggedOutUser = {
-      name: 'Guest User',
-      email: '',
-      role: 'Logged Out',
-      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
-      isLoggedIn: false,
-    };
-    setCurrentUser(loggedOutUser);
-    localStorage.setItem('smartech_user', JSON.stringify(loggedOutUser));
-    showToast('You have been logged out.');
+    localStorage.removeItem('smartech_token');
+    setCurrentUser(null);
+    showToast('You have been logged out. Now browsing in Guest Mode.');
+    loadTodos();
+    loadStats();
   };
 
   // Load Todos from API
@@ -139,13 +139,13 @@ export function App() {
       }
     } catch (err) {
       console.error('Error fetching todos:', err);
-      showToast(err.message || 'Failed to load todos', 'error');
+      showToast(err.message || 'Failed to load todos from database', 'error');
     } finally {
       setIsLoading(false);
     }
   }, [searchTerm, statusFilter, categoryFilter, priorityFilter, sortBy]);
 
-  // Load Stats
+  // Load Stats from API
   const loadStats = useCallback(async () => {
     try {
       const response = await api.getStats();
@@ -157,11 +157,11 @@ export function App() {
     }
   }, []);
 
-  // Initial load
+  // Load data on auth change or filter change
   useEffect(() => {
     loadTodos();
     loadStats();
-  }, [loadTodos, loadStats]);
+  }, [loadTodos, loadStats, currentUser]);
 
   // Toggle Todo completion
   const handleToggleComplete = async (id, isCompleted) => {
@@ -185,7 +185,7 @@ export function App() {
       }
     } catch (err) {
       console.error('Error toggling complete:', err);
-      showToast(err.message || 'Failed to update task status', 'error');
+      showToast(err.message || 'Failed to update task status in database', 'error');
       loadTodos();
     }
   };
@@ -198,7 +198,7 @@ export function App() {
         // Update
         const res = await api.updateTodo(editingTodo._id, todoData);
         if (res.success) {
-          showToast('Task updated successfully!');
+          showToast('Task updated in database successfully!');
           setIsModalOpen(false);
           setEditingTodo(null);
           loadTodos();
@@ -208,7 +208,7 @@ export function App() {
         // Create
         const res = await api.createTodo(todoData);
         if (res.success) {
-          showToast('New task created successfully!');
+          showToast('New task saved to database!');
           setIsModalOpen(false);
           loadTodos();
           loadStats();
@@ -231,30 +231,13 @@ export function App() {
     try {
       const res = await api.deleteTodo(id);
       if (res.success) {
-        showToast('Task deleted successfully');
+        showToast('Task deleted from database');
         loadTodos();
         loadStats();
       }
     } catch (err) {
       console.error('Error deleting todo:', err);
       showToast(err.message || 'Failed to delete task', 'error');
-    }
-  };
-
-  // Seed sample demo data
-  const handleSeedData = async () => {
-    try {
-      setIsSeeding(true);
-      const res = await api.seedTodos();
-      if (res.success) {
-        showToast('Sample demo tasks re-seeded successfully!');
-        loadTodos();
-        loadStats();
-      }
-    } catch (err) {
-      showToast(err.message || 'Failed to seed sample data', 'error');
-    } finally {
-      setIsSeeding(false);
     }
   };
 
@@ -300,8 +283,7 @@ export function App() {
           <SettingsView 
             currentUser={currentUser}
             onUpdateUser={handleUpdateUser}
-            onSeedData={handleSeedData}
-            isSeeding={isSeeding}
+            onOpenAuthModal={() => setIsAuthModalOpen(true)}
             onShowToast={showToast}
           />
         );
@@ -311,9 +293,25 @@ export function App() {
           <div className="section-view-container">
             <div className="section-view-header">
               <div>
-                <h2 className="section-main-heading">Task & Assignment Manager</h2>
-                <p className="section-sub-heading">Organize coursework, homework deadlines, and milestones</p>
+                <h2 className="section-main-heading">
+                  {currentUser?.isLoggedIn ? `${currentUser.name}'s Tasks` : 'Task & Assignment Manager'}
+                </h2>
+                <p className="section-sub-heading">
+                  {currentUser?.isLoggedIn 
+                    ? 'Manage your personal coursework, deadlines, and milestones from database' 
+                    : 'Log in to create, organize, and sync your private tasks in MongoDB'}
+                </p>
               </div>
+
+              {!currentUser?.isLoggedIn && (
+                <button
+                  className="btn-pill btn-primary"
+                  onClick={() => setIsAuthModalOpen(true)}
+                >
+                  <LogIn size={15} />
+                  <span>Log In to Sync Tasks</span>
+                </button>
+              )}
             </div>
 
             {/* Filter and Sort Toolbar */}
@@ -336,7 +334,7 @@ export function App() {
             {/* Todos List Items */}
             {isLoading ? (
               <div className="empty-state-box">
-                <p>Loading tasks from database...</p>
+                <p>Loading tasks from MongoDB...</p>
               </div>
             ) : todos.length === 0 ? (
               <div className="empty-state-box">
@@ -345,7 +343,9 @@ export function App() {
                 <p className="empty-state-desc">
                   {searchTerm || statusFilter !== 'All' || categoryFilter !== 'All'
                     ? 'Try adjusting your search terms or filter criteria.'
-                    : 'You do not have any tasks yet. Create a new task to get started!'}
+                    : currentUser?.isLoggedIn 
+                      ? 'You have no tasks in your database yet. Click below to add your first task!'
+                      : 'You are in Guest mode with no tasks. Create a task or log in to sync your account!'}
                 </p>
                 <button
                   className="btn-pill btn-primary"
@@ -421,7 +421,7 @@ export function App() {
                 {/* Todos List Items */}
                 {isLoading ? (
                   <div className="empty-state-box">
-                    <p>Loading tasks from database...</p>
+                    <p>Loading tasks from MongoDB...</p>
                   </div>
                 ) : todos.length === 0 ? (
                   <div className="empty-state-box">
@@ -430,7 +430,7 @@ export function App() {
                     <p className="empty-state-desc">
                       {searchTerm || statusFilter !== 'All' || categoryFilter !== 'All'
                         ? 'Try adjusting your search terms or filter criteria.'
-                        : 'You do not have any tasks yet. Create a new task to get started!'}
+                        : 'No tasks found in database. Create a new task to get started!'}
                     </p>
                     <button
                       className="btn-pill btn-primary"
@@ -463,9 +463,9 @@ export function App() {
             {/* Right Column: Circular Progress Metric Gauges (Attendance, Homework, Rating) */}
             <aside className="right-stats-column">
               <StatGauge
-                attendance={stats.attendanceRate || 60}
-                homework={stats.homeworkRate || 90}
-                rating={stats.ratingScore || 75}
+                attendance={stats.attendanceRate || 0}
+                homework={stats.homeworkRate || 0}
+                rating={stats.ratingScore || 0}
                 totalTasks={stats.total}
                 completedTasks={stats.completed}
               />
@@ -477,10 +477,11 @@ export function App() {
 
   const getHeaderGreeting = () => {
     if (activeTab === 'dashboard') {
-      const firstName = currentUser?.name ? currentUser.name.trim().split(' ')[0].toUpperCase() : 'STUDENT';
-      return currentUser?.isLoggedIn 
-        ? `HELLO, ${firstName}!` 
-        : 'WELCOME TO SMARTECH!';
+      if (currentUser && currentUser.isLoggedIn) {
+        const firstName = currentUser.name.trim().split(' ')[0].toUpperCase();
+        return `HELLO, ${firstName}!`;
+      }
+      return 'GUEST DASHBOARD';
     }
     return activeTab.toUpperCase();
   };
@@ -508,8 +509,6 @@ export function App() {
               setEditingTodo(null);
               setIsModalOpen(true);
             }}
-            onSeedData={handleSeedData}
-            isSeeding={isSeeding}
             currentUser={currentUser}
             onOpenAuthModal={() => setIsAuthModalOpen(true)}
             onLogout={handleLogout}

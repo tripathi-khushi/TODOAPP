@@ -1,13 +1,20 @@
 import mongoose from 'mongoose';
 import Todo from '../models/Todo.js';
 
-// @desc    Get all todos with filtering, sorting, and search
+// @desc    Get all todos with filtering, sorting, and search (isolated per user)
 // @route   GET /api/todos
 export const getTodos = async (req, res) => {
   try {
     const { search, status, category, priority, sortBy = 'createdAt', order = 'desc' } = req.query;
 
     const query = {};
+
+    // User isolation: If logged in, fetch user's tasks. If guest, fetch guest/public tasks
+    if (req.user && req.user._id) {
+      query.user = req.user._id;
+    } else {
+      query.user = null;
+    }
 
     // Search keyword in title or description or tags
     if (search && search.trim() !== '') {
@@ -46,7 +53,6 @@ export const getTodos = async (req, res) => {
     if (sortBy === 'dueDate') {
       sortOptions.dueDate = sortDirection;
     } else if (sortBy === 'priority') {
-      // Custom priority weighting if needed or alpha
       sortOptions.priority = sortDirection;
     } else if (sortBy === 'title') {
       sortOptions.title = sortDirection;
@@ -123,6 +129,7 @@ export const createTodo = async (req, res) => {
     const isCompleted = status === 'Completed';
 
     const todo = await Todo.create({
+      user: req.user ? req.user._id : null,
       title: title.trim(),
       description: description ? description.trim() : '',
       category: category || 'Academic',
@@ -137,7 +144,7 @@ export const createTodo = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'Todo created successfully',
+      message: 'Todo created successfully in database',
       data: todo,
     });
   } catch (error) {
@@ -168,6 +175,14 @@ export const updateTodo = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: `Todo item not found with ID: ${id}`,
+      });
+    }
+
+    // Verify ownership if task has a user and user is logged in
+    if (todo.user && req.user && todo.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to update this task',
       });
     }
 
@@ -228,7 +243,6 @@ export const patchTodo = async (req, res) => {
       });
     }
 
-    // Check specific patch operations
     const { isCompleted, status, subtaskId, subtaskCompleted, newSubtask } = req.body;
 
     if (typeof isCompleted === 'boolean') {
@@ -286,7 +300,7 @@ export const deleteTodo = async (req, res) => {
       });
     }
 
-    const todo = await Todo.findByIdAndDelete(id);
+    const todo = await Todo.findById(id);
 
     if (!todo) {
       return res.status(404).json({
@@ -295,9 +309,11 @@ export const deleteTodo = async (req, res) => {
       });
     }
 
+    await Todo.findByIdAndDelete(id);
+
     res.status(200).json({
       success: true,
-      message: 'Todo deleted successfully',
+      message: 'Todo deleted from database successfully',
       data: { id },
     });
   } catch (error) {
@@ -310,31 +326,30 @@ export const deleteTodo = async (req, res) => {
   }
 };
 
-// @desc    Get dashboard statistics for gauges and summary cards
+// @desc    Get dashboard statistics computed dynamically from database
 // @route   GET /api/todos/stats
 export const getTodoStats = async (req, res) => {
   try {
-    const total = await Todo.countDocuments();
-    const completed = await Todo.countDocuments({ isCompleted: true });
-    const inProgress = await Todo.countDocuments({ status: 'In Progress' });
-    const pending = await Todo.countDocuments({ status: 'Pending' });
+    const userQuery = req.user ? { user: req.user._id } : { user: null };
+
+    const total = await Todo.countDocuments(userQuery);
+    const completed = await Todo.countDocuments({ ...userQuery, isCompleted: true });
+    const inProgress = await Todo.countDocuments({ ...userQuery, status: 'In Progress' });
+    const pending = await Todo.countDocuments({ ...userQuery, status: 'Pending' });
 
     // Academic / Homework specific
-    const academicTotal = await Todo.countDocuments({ category: 'Academic' });
-    const academicCompleted = await Todo.countDocuments({ category: 'Academic', isCompleted: true });
+    const academicTotal = await Todo.countDocuments({ ...userQuery, category: 'Academic' });
+    const academicCompleted = await Todo.countDocuments({ ...userQuery, category: 'Academic', isCompleted: true });
 
-    // Projects specific
-    const projectsTotal = await Todo.countDocuments({ category: 'Projects' });
-    const projectsCompleted = await Todo.countDocuments({ category: 'Projects', isCompleted: true });
-
-    // Calculate rates
+    // Calculate rates dynamically
     const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
-    const homeworkRate = academicTotal > 0 ? Math.round((academicCompleted / academicTotal) * 100) : 90;
-    const attendanceRate = 60; // Styled reference gauge
-    const ratingScore = total > 0 ? Math.min(100, Math.round(75 + (completionRate * 0.2))) : 75;
+    const homeworkRate = academicTotal > 0 ? Math.round((academicCompleted / academicTotal) * 100) : (total > 0 ? completionRate : 0);
+    const attendanceRate = total > 0 ? Math.min(100, Math.round(50 + (completionRate * 0.5))) : 0;
+    const ratingScore = total > 0 ? Math.min(100, Math.round(60 + (completionRate * 0.4))) : 0;
 
-    // Upcoming schedule tasks
+    // Upcoming schedule tasks from database
     const upcomingSchedule = await Todo.find({
+      ...userQuery,
       isCompleted: false,
     })
       .sort({ dueDate: 1, time: 1 })

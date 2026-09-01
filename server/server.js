@@ -6,8 +6,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { connectDB } from './config/db.js';
 import todoRoutes from './routes/todoRoutes.js';
-import Todo from './models/Todo.js';
-import { sampleTodos } from './seeds/seedData.js';
+import authRoutes from './routes/authRoutes.js';
 
 dotenv.config();
 
@@ -28,6 +27,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
 
 // API Routes
+app.use('/api/auth', authRoutes);
 app.use('/api/todos', todoRoutes);
 
 // Health check route
@@ -73,20 +73,12 @@ const startServer = async () => {
   try {
     await connectDB();
 
-    // Check if database needs initial seeding
-    const count = await Todo.countDocuments();
-    if (count === 0) {
-      console.log('Database is empty. Populating with initial reference sample todos...');
-      await Todo.insertMany(sampleTodos);
-      console.log('Sample todos seeded successfully.');
-    }
-
     app.listen(PORT, () => {
       console.log(`=========================================`);
-      console.log(`🚀 Smartech Todo Server running on port ${PORT}`);
-      console.log(`📡 API Health Check: http://localhost:${PORT}/api/health`);
-      console.log(`📋 Todos API:        http://localhost:${PORT}/api/todos`);
-      console.log(`📊 Stats API:        http://localhost:${PORT}/api/todos/stats`);
+      console.log(`🚀 Smartech Server running on port ${PORT}`);
+      console.log(`📡 API Health:   http://localhost:${PORT}/api/health`);
+      console.log(`🔐 Auth API:     http://localhost:${PORT}/api/auth`);
+      console.log(`📋 Todos API:    http://localhost:${PORT}/api/todos`);
       console.log(`=========================================`);
     });
   } catch (error) {

@@ -1,19 +1,19 @@
 import React, { useState } from 'react';
-import { Search, Bell, MoreVertical, Plus, Sparkles, LogIn, LogOut, User } from 'lucide-react';
+import { Search, Bell, MoreVertical, Plus, LogIn, LogOut, User, UserPlus } from 'lucide-react';
 
 export const Header = ({ 
   searchTerm = '', 
   onSearchChange, 
   onOpenAddModal, 
-  onSeedData,
-  isSeeding = false,
-  title = 'HELLO, SOPHIA!',
-  currentUser = { name: 'Sophia Tompson', isLoggedIn: true },
+  title = 'GUEST DASHBOARD',
+  currentUser = null,
   onOpenAuthModal,
   onLogout
 }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+
+  const isLoggedIn = Boolean(currentUser && currentUser.isLoggedIn);
 
   return (
     <header className="dashboard-header">
@@ -58,19 +58,6 @@ export const Header = ({
           </button>
         )}
 
-        {/* Seed Data Button */}
-        {onSeedData && (
-          <button
-            className="btn-icon seed-btn"
-            onClick={onSeedData}
-            title="Reset / Seed Demo Data"
-            disabled={isSeeding}
-            id="btn-seed-data"
-          >
-            <Sparkles size={16} className={isSeeding ? 'animate-spin' : ''} />
-          </button>
-        )}
-
         {/* Notifications Bell */}
         <div className="notification-wrapper">
           <button 
@@ -80,35 +67,40 @@ export const Header = ({
             id="btn-notifications"
           >
             <Bell size={18} />
-            <span className="notification-badge-dot"></span>
+            {isLoggedIn && <span className="notification-badge-dot"></span>}
           </button>
 
           {showNotifications && (
             <div className="notification-dropdown">
               <div className="notification-header">
                 <h5>Notifications</h5>
-                <span>3 New</span>
+                <span>{isLoggedIn ? 'Live' : 'Guest'}</span>
               </div>
               <ul className="notification-list">
-                <li>
-                  <strong>Robotics Lesson</strong> is scheduled for today at 19:30.
-                  <span className="notif-time">10m ago</span>
-                </li>
-                <li>
-                  <strong>Homework 10</strong> was submitted and marked complete.
-                  <span className="notif-time">2h ago</span>
-                </li>
-                <li>
-                  Liam Garcia scheduled an <strong>Electronics Lesson</strong> for tomorrow.
-                  <span className="notif-time">1d ago</span>
-                </li>
+                {isLoggedIn ? (
+                  <>
+                    <li>
+                      Welcome to your personal dashboard, <strong>{currentUser.name}</strong>.
+                      <span className="notif-time">Just now</span>
+                    </li>
+                    <li>
+                      Your coursework and tasks are persistently saved in MongoDB.
+                      <span className="notif-time">1m ago</span>
+                    </li>
+                  </>
+                ) : (
+                  <li>
+                    You are browsing as a guest. Please log in to sync your tasks and grades.
+                    <span className="notif-time">Info</span>
+                  </li>
+                )}
               </ul>
             </div>
           )}
         </div>
 
-        {/* Prominent Login / User Status Button */}
-        {currentUser?.isLoggedIn ? (
+        {/* Login or User Badge Button */}
+        {isLoggedIn ? (
           <div className="header-user-dropdown-wrap" style={{ position: 'relative' }}>
             <button
               className="btn-pill btn-secondary header-user-badge-btn"
@@ -121,17 +113,17 @@ export const Header = ({
             </button>
 
             {showUserMenu && (
-              <div className="notification-dropdown user-menu-dropdown" style={{ width: '200px' }}>
-                <div style={{ padding: '4px 0', borderBottom: '1px solid #f0e6ec', marginBottom: '8px' }}>
+              <div className="notification-dropdown user-menu-dropdown" style={{ width: '220px' }}>
+                <div style={{ padding: '6px 0', borderBottom: '1px solid #f0e6ec', marginBottom: '8px' }}>
                   <strong style={{ fontSize: '0.88rem', display: 'block' }}>{currentUser.name}</strong>
-                  <span style={{ fontSize: '0.74rem', color: '#7f6779' }}>{currentUser.email || 'sophia@smartech.edu'}</span>
+                  <span style={{ fontSize: '0.74rem', color: '#7f6779', wordBreak: 'break-all' }}>{currentUser.email}</span>
                 </div>
                 <button
                   className="dropdown-menu-item"
                   onClick={() => { setShowUserMenu(false); onOpenAuthModal && onOpenAuthModal(); }}
                   style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 4px', fontSize: '0.82rem', color: '#624b5d', fontWeight: 600 }}
                 >
-                  <User size={14} />
+                  <UserPlus size={14} />
                   <span>Switch Account</span>
                 </button>
                 <button
@@ -162,7 +154,7 @@ export const Header = ({
           className="btn-icon more-options-btn" 
           id="btn-more-options"
           onClick={() => {
-            if (currentUser?.isLoggedIn) {
+            if (isLoggedIn) {
               setShowUserMenu(!showUserMenu);
             } else if (onOpenAuthModal) {
               onOpenAuthModal();

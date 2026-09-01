@@ -6,29 +6,32 @@ import {
   CalendarDays, 
   MessageSquare, 
   Settings, 
-  LogOut,
-  LogIn,
-  CheckSquare
+  LogOut, 
+  LogIn, 
+  CheckSquare 
 } from 'lucide-react';
 
 export const Sidebar = ({ 
   activePage = 'dashboard', 
   onSelectPage,
-  currentUser = {
-    name: 'Sophia',
-    role: 'Tompson',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-    isLoggedIn: true,
-  },
+  currentUser = null,
   onOpenAuthModal,
   onLogout
 }) => {
+  const isLoggedIn = Boolean(currentUser && currentUser.isLoggedIn);
+
   const handleNavClick = (pageKey, e) => {
     if (onSelectPage) {
       e.preventDefault();
       onSelectPage(pageKey);
     }
   };
+
+  const displayName = isLoggedIn ? currentUser.name : 'Guest User';
+  const displayRole = isLoggedIn ? (currentUser.major || 'Student') : 'Visitor';
+  const avatarUrl = (isLoggedIn && currentUser.avatar) 
+    ? currentUser.avatar 
+    : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80';
 
   return (
     <aside className="sidebar">
@@ -47,27 +50,27 @@ export const Sidebar = ({
       <div 
         className="user-profile-widget"
         onClick={() => {
-          if (currentUser?.isLoggedIn && onSelectPage) {
+          if (isLoggedIn && onSelectPage) {
             onSelectPage('settings');
           } else if (onOpenAuthModal) {
             onOpenAuthModal();
           }
         }}
         style={{ cursor: 'pointer' }}
-        title={currentUser?.isLoggedIn ? 'View Student Profile' : 'Click to Log In'}
+        title={isLoggedIn ? 'View Profile & Settings' : 'Click to Log In'}
         id="sidebar-user-profile-card"
       >
         <div className="avatar-wrapper">
           <img 
-            src={currentUser?.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"} 
-            alt={currentUser?.name || 'User'} 
+            src={avatarUrl} 
+            alt={displayName} 
             className="avatar-img"
           />
-          <span className={`status-indicator ${currentUser?.isLoggedIn ? 'online' : 'offline'}`}></span>
+          <span className={`status-indicator ${isLoggedIn ? 'online' : 'offline'}`}></span>
         </div>
         <div className="user-info">
-          <h4 className="user-name">{currentUser?.name?.split(' ')[0] || 'Sophia'}</h4>
-          <p className="user-role">{currentUser?.role?.includes('•') ? currentUser.role.split('•')[0] : (currentUser?.name?.split(' ')[1] || 'Tompson')}</p>
+          <h4 className="user-name">{displayName.split(' ')[0]}</h4>
+          <p className="user-role">{displayName.split(' ').slice(1).join(' ') || displayRole}</p>
         </div>
       </div>
 
@@ -160,7 +163,7 @@ export const Sidebar = ({
 
       {/* Footer / Login or Logout */}
       <div className="sidebar-footer">
-        {currentUser?.isLoggedIn ? (
+        {isLoggedIn ? (
           <button 
             className="logout-button" 
             onClick={onLogout}

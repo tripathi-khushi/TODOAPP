@@ -17,6 +17,12 @@ const SubtaskSchema = new mongoose.Schema(
 
 const TodoSchema = new mongoose.Schema(
   {
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      index: true,
+      default: null,
+    },
     title: {
       type: String,
       required: [true, 'Please provide a task title'],
