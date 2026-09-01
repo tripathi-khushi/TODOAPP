@@ -34,9 +34,11 @@ export function App() {
       } catch (e) {}
     }
     return {
-      name: 'Sophia Tompson',
-      email: 'sophia.tompson@smartech.edu',
+      name: 'Khushi Tripathi',
+      email: 'khushi.tripathi@smartech.edu',
       role: 'Student • Robotics Major',
+      studentId: 'ST-2026-8941',
+      major: 'Robotics & AI Engineering',
       avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
       isLoggedIn: true,
     };
@@ -97,7 +99,12 @@ export function App() {
   const handleLoginSuccess = (user) => {
     setCurrentUser(user);
     localStorage.setItem('smartech_user', JSON.stringify(user));
-    showToast(`Welcome back, ${user.name}!`);
+    showToast(`Welcome, ${user.name}!`);
+  };
+
+  const handleUpdateUser = (updatedUser) => {
+    setCurrentUser(updatedUser);
+    localStorage.setItem('smartech_user', JSON.stringify(updatedUser));
   };
 
   const handleLogout = () => {
@@ -291,6 +298,8 @@ export function App() {
       case 'settings':
         return (
           <SettingsView 
+            currentUser={currentUser}
+            onUpdateUser={handleUpdateUser}
             onSeedData={handleSeedData}
             isSeeding={isSeeding}
             onShowToast={showToast}
@@ -468,8 +477,9 @@ export function App() {
 
   const getHeaderGreeting = () => {
     if (activeTab === 'dashboard') {
+      const firstName = currentUser?.name ? currentUser.name.trim().split(' ')[0].toUpperCase() : 'STUDENT';
       return currentUser?.isLoggedIn 
-        ? `HELLO, ${currentUser.name.split(' ')[0].toUpperCase()}!` 
+        ? `HELLO, ${firstName}!` 
         : 'WELCOME TO SMARTECH!';
     }
     return activeTab.toUpperCase();
