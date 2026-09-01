@@ -7,10 +7,22 @@ import {
   MessageSquare, 
   Settings, 
   LogOut,
+  LogIn,
   CheckSquare
 } from 'lucide-react';
 
-export const Sidebar = ({ activePage = 'dashboard', onSelectPage }) => {
+export const Sidebar = ({ 
+  activePage = 'dashboard', 
+  onSelectPage,
+  currentUser = {
+    name: 'Sophia',
+    role: 'Tompson',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+    isLoggedIn: true,
+  },
+  onOpenAuthModal,
+  onLogout
+}) => {
   const handleNavClick = (pageKey, e) => {
     if (onSelectPage) {
       e.preventDefault();
@@ -34,21 +46,28 @@ export const Sidebar = ({ activePage = 'dashboard', onSelectPage }) => {
       {/* User Profile Card */}
       <div 
         className="user-profile-widget"
-        onClick={(e) => handleNavClick('settings', e)}
+        onClick={() => {
+          if (currentUser?.isLoggedIn && onSelectPage) {
+            onSelectPage('settings');
+          } else if (onOpenAuthModal) {
+            onOpenAuthModal();
+          }
+        }}
         style={{ cursor: 'pointer' }}
-        title="View Student Profile"
+        title={currentUser?.isLoggedIn ? 'View Student Profile' : 'Click to Log In'}
+        id="sidebar-user-profile-card"
       >
         <div className="avatar-wrapper">
           <img 
-            src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80" 
-            alt="Sophia Tompson" 
+            src={currentUser?.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"} 
+            alt={currentUser?.name || 'User'} 
             className="avatar-img"
           />
-          <span className="status-indicator online"></span>
+          <span className={`status-indicator ${currentUser?.isLoggedIn ? 'online' : 'offline'}`}></span>
         </div>
         <div className="user-info">
-          <h4 className="user-name">Sophia</h4>
-          <p className="user-role">Tompson</p>
+          <h4 className="user-name">{currentUser?.name?.split(' ')[0] || 'Sophia'}</h4>
+          <p className="user-role">{currentUser?.role?.includes('•') ? currentUser.role.split('•')[0] : (currentUser?.name?.split(' ')[1] || 'Tompson')}</p>
         </div>
       </div>
 
@@ -139,16 +158,29 @@ export const Sidebar = ({ activePage = 'dashboard', onSelectPage }) => {
         </a>
       </nav>
 
-      {/* Footer / Logout */}
+      {/* Footer / Login or Logout */}
       <div className="sidebar-footer">
-        <button 
-          className="logout-button" 
-          onClick={() => alert('Logged out. In a live system, this clears authentication tokens and redirects to login.')}
-          id="btn-logout"
-        >
-          <LogOut size={16} />
-          <span>Log out</span>
-        </button>
+        {currentUser?.isLoggedIn ? (
+          <button 
+            className="logout-button" 
+            onClick={onLogout}
+            id="btn-logout"
+            title="Log out of session"
+          >
+            <LogOut size={16} />
+            <span>Log out</span>
+          </button>
+        ) : (
+          <button 
+            className="login-button-sidebar btn-pill btn-primary" 
+            onClick={onOpenAuthModal}
+            id="btn-sidebar-login"
+            style={{ width: '100%', padding: '10px' }}
+          >
+            <LogIn size={16} />
+            <span>Log in</span>
+          </button>
+        )}
       </div>
     </aside>
   );

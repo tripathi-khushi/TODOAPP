@@ -8,6 +8,7 @@ import LinkedTeachersCard from '../../components/LinkedTeachersCard';
 import ProjectsCard from '../../components/ProjectsCard';
 import TodoCard from '../../components/TodoCard';
 import TodoModal from '../../components/TodoModal';
+import AuthModal from '../../components/AuthModal';
 import FilterBar from '../../components/FilterBar';
 import Toast from '../../components/Toast';
 import ClassesView from '../../components/ClassesView';
@@ -23,6 +24,25 @@ import '../../styles/dashboard.css';
 export function App() {
   // Active Navigation Tab State (dashboard, todos, classes, grades, schedule, messages, settings)
   const [activeTab, setActiveTab] = useState('dashboard');
+
+  // User Authentication State
+  const [currentUser, setCurrentUser] = useState(() => {
+    const saved = localStorage.getItem('smartech_user');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {}
+    }
+    return {
+      name: 'Sophia Tompson',
+      email: 'sophia.tompson@smartech.edu',
+      role: 'Student • Robotics Major',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+      isLoggedIn: true,
+    };
+  });
+
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   const [todos, setTodos] = useState([]);
   const [stats, setStats] = useState({
@@ -71,6 +91,26 @@ export function App() {
     const url = new URL(window.location);
     url.searchParams.set('tab', tabKey);
     window.history.pushState({}, '', url);
+  };
+
+  // Auth Handlers
+  const handleLoginSuccess = (user) => {
+    setCurrentUser(user);
+    localStorage.setItem('smartech_user', JSON.stringify(user));
+    showToast(`Welcome back, ${user.name}!`);
+  };
+
+  const handleLogout = () => {
+    const loggedOutUser = {
+      name: 'Guest User',
+      email: '',
+      role: 'Logged Out',
+      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+      isLoggedIn: false,
+    };
+    setCurrentUser(loggedOutUser);
+    localStorage.setItem('smartech_user', JSON.stringify(loggedOutUser));
+    showToast('You have been logged out.');
   };
 
   // Load Todos from API
@@ -426,6 +466,15 @@ export function App() {
     }
   };
 
+  const getHeaderGreeting = () => {
+    if (activeTab === 'dashboard') {
+      return currentUser?.isLoggedIn 
+        ? `HELLO, ${currentUser.name.split(' ')[0].toUpperCase()}!` 
+        : 'WELCOME TO SMARTECH!';
+    }
+    return activeTab.toUpperCase();
+  };
+
   return (
     <div className="app-viewport">
       <div className="app-canvas">
@@ -433,13 +482,16 @@ export function App() {
         <Sidebar 
           activePage={activeTab} 
           onSelectPage={handleSelectTab} 
+          currentUser={currentUser}
+          onOpenAuthModal={() => setIsAuthModalOpen(true)}
+          onLogout={handleLogout}
         />
 
         {/* Center & Right Content Area */}
         <main className="dashboard-main">
           {/* Header Bar */}
           <Header
-            title={activeTab === 'dashboard' ? 'HELLO, SOPHIA!' : activeTab.toUpperCase()}
+            title={getHeaderGreeting()}
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
             onOpenAddModal={() => {
@@ -448,6 +500,9 @@ export function App() {
             }}
             onSeedData={handleSeedData}
             isSeeding={isSeeding}
+            currentUser={currentUser}
+            onOpenAuthModal={() => setIsAuthModalOpen(true)}
+            onLogout={handleLogout}
           />
 
           {/* Dynamic Main Body Content */}
@@ -465,6 +520,13 @@ export function App() {
         onSave={handleSaveTodo}
         initialData={editingTodo}
         isLoading={isSaving}
+      />
+
+      {/* Login & Authentication Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onLoginSuccess={handleLoginSuccess}
       />
 
       {/* Floating Toast Notification */}
