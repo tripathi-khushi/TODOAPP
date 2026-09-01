@@ -1,0 +1,331 @@
+/* =========================================================
+   SINGLE TODO DETAILS (PAGE 2) STYLES
+   ========================================================= */
+
+.todo-detail-main {
+  display: flex;
+  flex-direction: column;
+  padding: 32px 40px;
+  overflow-y: auto;
+  gap: 24px;
+  background: var(--canvas-bg);
+}
+
+@media (max-width: 768px) {
+  .todo-detail-main {
+    padding: 20px 16px;
+  }
+}
+
+/* Top Navigation Bar */
+.detail-top-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.btn-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #ffffff;
+  border-radius: var(--radius-pill);
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  box-shadow: 0 2px 8px rgba(100, 70, 90, 0.06);
+  border: 1px solid rgba(220, 200, 215, 0.5);
+  text-decoration: none;
+  transition: all var(--transition-normal);
+}
+.btn-back-link:hover {
+  background: var(--card-tint-light);
+  color: var(--text-primary);
+  transform: translateX(-2px);
+}
+
+.detail-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+.detail-breadcrumbs a {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+.detail-breadcrumbs a:hover {
+  color: var(--text-primary);
+}
+
+/* Single Todo Layout Grid */
+.detail-layout-grid {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 24px;
+}
+
+@media (max-width: 950px) {
+  .detail-layout-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Main Detail Card */
+.detail-primary-card {
+  background: #ffffff;
+  border-radius: var(--radius-xl);
+  padding: 32px;
+  box-shadow: var(--shadow-card);
+  border: 1px solid rgba(220, 200, 215, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Header & Status Toggle inside Detail */
+.detail-status-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #f0e6ec;
+}
+
+.status-segmented-control {
+  display: flex;
+  background: var(--card-tint-light);
+  padding: 4px;
+  border-radius: var(--radius-pill);
+  gap: 4px;
+}
+
+.status-segment-btn {
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  transition: all var(--transition-fast);
+}
+
+.status-segment-btn.active.status-pending {
+  background: #fff3e0;
+  color: #e65100;
+  box-shadow: 0 2px 6px rgba(230, 81, 0, 0.15);
+}
+.status-segment-btn.active.status-progress {
+  background: #e3f2fd;
+  color: #1565c0;
+  box-shadow: 0 2px 6px rgba(21, 101, 192, 0.15);
+}
+.status-segment-btn.active.status-completed {
+  background: #e8f5e9;
+  color: #2e7d32;
+  box-shadow: 0 2px 6px rgba(46, 125, 50, 0.15);
+}
+
+/* Detail Editable Title */
+.detail-title-input {
+  width: 100%;
+  font-family: var(--font-heading);
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  background: transparent;
+  border-bottom: 2px dashed transparent;
+  padding: 4px 0;
+  transition: all var(--transition-fast);
+}
+.detail-title-input:focus {
+  border-bottom-color: #8c7185;
+}
+
+/* Detail Description Area */
+.detail-desc-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.detail-section-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.detail-desc-textarea {
+  width: 100%;
+  min-height: 120px;
+  background: var(--card-tint-light);
+  border: 1px solid rgba(220, 200, 215, 0.6);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--text-primary);
+  resize: vertical;
+}
+.detail-desc-textarea:focus {
+  background: #ffffff;
+  border-color: #8c7185;
+  box-shadow: 0 0 0 3px rgba(140, 113, 133, 0.12);
+}
+
+/* Interactive Subtasks in Single Todo Page */
+.detail-subtasks-container {
+  background: var(--canvas-card);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.subtasks-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.subtask-progress-bar-wrap {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+
+.subtask-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-cyan), var(--accent-pink));
+  border-radius: var(--radius-pill);
+  transition: width 0.4s ease;
+}
+
+.subtask-interactive-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.subtask-interactive-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #ffffff;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  box-shadow: 0 2px 6px rgba(100, 70, 90, 0.04);
+}
+
+.subtask-check-circle {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid #b89fae;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.subtask-check-circle.checked {
+  background: var(--accent-cyan);
+  border-color: var(--accent-cyan);
+}
+
+.subtask-text-editable {
+  flex: 1;
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+.subtask-text-editable.completed {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
+/* Sidebar / Info Side Column in Page 2 */
+.detail-side-column {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.meta-inspector-card {
+  background: #ffffff;
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  border: 1px solid rgba(220, 200, 215, 0.5);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.meta-field-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.meta-field-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.meta-field-value {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.meta-id-badge {
+  font-family: monospace;
+  font-size: 0.75rem;
+  background: var(--card-tint-light);
+  padding: 4px 8px;
+  border-radius: var(--radius-xs);
+  color: var(--text-secondary);
+  word-break: break-all;
+}
+
+.detail-actions-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.btn-save-detail {
+  width: 100%;
+  padding: 12px;
+  background: #624b5d;
+  color: #ffffff;
+  font-size: 0.95rem;
+}
+.btn-save-detail:hover {
+  background: #503c4c;
+}
+
+.btn-delete-detail {
+  width: 100%;
+  padding: 10px;
+}
