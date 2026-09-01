@@ -9,6 +9,7 @@
     "client": "npm --prefix client run dev",
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "build": "npm --prefix client run build",
+    "db:view": "npm --prefix server run db:view",
     "install:all": "npm install && npm --prefix server install && npm --prefix client install"
   },
   "keywords": [

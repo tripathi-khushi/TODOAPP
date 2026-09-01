@@ -1,5 +1,7 @@
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 import User from '../models/User.js';
+import { generateAndSendOtp, verifySubmittedOtp } from '../services/otpService.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'smartech_super_secret_jwt_key_2026';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '30d';
@@ -11,9 +13,9 @@ const signToken = (id) => {
   });
 };
 
-// @desc    Register a new user
-// @route   POST /api/auth/register
-export const register = async (req, res) => {
+// @desc    Step 1 of Signup: Validate details & send 6-digit OTP email
+// @route   POST /api/auth/send-signup-otp
+export const sendSignupOtp = async (req, res) => {
   try {
     const { name, email, password, studentId, major, avatar } = req.body;
 
@@ -29,33 +31,102 @@ export const register = async (req, res) => {
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    // Check if user already exists
+    // Check if user already exists in database
     const existingUser = await User.findOne({ email: normalizedEmail });
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        message: 'An account with this email address already exists. Please log in.',
+        message: 'An account with this email address already exists. Please sign in.',
       });
     }
 
-    // Default avatar if not provided
-    const defaultAvatar = avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80';
+    // Pre-hash password
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(password, salt);
 
-    // Create user in MongoDB
-    const user = await User.create({
+    // Stash pending registration data
+    const pendingUserData = {
       name: name.trim(),
-      email: normalizedEmail,
-      password: password,
-      studentId: studentId ? studentId.trim() : undefined,
+      passwordHash,
+      studentId: studentId ? studentId.trim() : `ST-${Math.floor(1000 + Math.random() * 9000)}`,
       major: major ? major.trim() : 'Robotics & AI Engineering',
-      avatar: defaultAvatar,
+      avatar: avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+    };
+
+    // Dispatch OTP via Nodemailer
+    await generateAndSendOtp(normalizedEmail, pendingUserData);
+
+    res.status(200).json({
+      success: true,
+      message: `A 6-digit verification code has been sent to ${normalizedEmail}`,
+      email: normalizedEmail,
+    });
+  } catch (error) {
+    console.error('Error in sendSignupOtp:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to send verification code',
+    });
+  }
+};
+
+// @desc    Step 2 of Signup: Verify 6-digit OTP and activate user account
+// @route   POST /api/auth/verify-signup-otp
+export const verifySignupOtp = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide both email and the 6-digit verification code',
+      });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // Verify OTP against MongoDB
+    const verification = await verifySubmittedOtp(normalizedEmail, otp);
+
+    if (!verification.valid) {
+      return res.status(400).json({
+        success: false,
+        message: verification.message,
+      });
+    }
+
+    const { userData } = verification;
+
+    // Check once again to avoid race condition
+    let user = await User.findOne({ email: normalizedEmail });
+    if (user) {
+      return res.status(400).json({
+        success: false,
+        message: 'Account already created. Please log in.',
+      });
+    }
+
+    // Create user in MongoDB with pre-hashed password
+    user = new User({
+      name: userData.name,
+      email: normalizedEmail,
+      password: 'TEMPORARY_RAW_HOLDER', // Will be overwritten by direct hash
+      studentId: userData.studentId,
+      major: userData.major,
+      avatar: userData.avatar,
+      isVerified: true,
     });
 
+    // Directly assign pre-hashed password without double hashing
+    user.password = userData.passwordHash;
+    await user.save({ validateBeforeSave: false });
+
+    // Issue JWT Token
     const token = signToken(user._id);
 
     res.status(201).json({
       success: true,
-      message: 'Account created successfully',
+      message: 'Account verified and created successfully in MongoDB!',
       token,
       user: {
         _id: user._id,
@@ -68,10 +139,44 @@ export const register = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Error in register:', error);
+    console.error('Error in verifySignupOtp:', error);
     res.status(500).json({
       success: false,
-      message: error.message || 'Registration failed',
+      message: error.message || 'Verification failed',
+    });
+  }
+};
+
+// @desc    Resend OTP to email
+// @route   POST /api/auth/resend-otp
+export const resendOtp = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Email address is required' });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const Otp = (await import('../models/Otp.js')).default;
+    const existingOtp = await Otp.findOne({ email: normalizedEmail });
+
+    if (!existingOtp) {
+      return res.status(400).json({
+        success: false,
+        message: 'No pending registration found for this email. Please restart signup.',
+      });
+    }
+
+    await generateAndSendOtp(normalizedEmail, existingOtp.pendingUserData);
+
+    res.status(200).json({
+      success: true,
+      message: `A new 6-digit verification code has been sent to ${normalizedEmail}`,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to resend verification code',
     });
   }
 };
@@ -96,7 +201,7 @@ export const login = async (req, res) => {
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid email or password. Please check your credentials or create an account.',
+        message: 'No account found with this email. Please create an account first.',
       });
     }
 
@@ -105,7 +210,7 @@ export const login = async (req, res) => {
     if (!isMatch) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid email or password. Please try again.',
+        message: 'Invalid password. Please try again.',
       });
     }
 

@@ -5,15 +5,31 @@ let mongoMemoryServer = null;
 
 export const connectDB = async () => {
   const primaryUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/smartech_todo';
+  const isCloudAtlas = primaryUri.includes('mongodb+srv') || primaryUri.includes('.mongodb.net');
 
   try {
-    console.log(`Connecting to MongoDB at: ${primaryUri}...`);
+    const maskedUri = primaryUri.replace(/:([^@]+)@/, ':****@');
+    console.log(`Connecting to MongoDB at: ${maskedUri}...`);
+
     await mongoose.connect(primaryUri, {
-      serverSelectionTimeoutMS: 3000,
+      serverSelectionTimeoutMS: isCloudAtlas ? 10000 : 3000,
     });
-    console.log('Successfully connected to standalone MongoDB.');
+
+    if (isCloudAtlas) {
+      console.log('🎉 Successfully connected to Cloud MongoDB Atlas!');
+    } else {
+      console.log('✅ Successfully connected to local MongoDB.');
+    }
   } catch (err) {
-    console.warn(`Could not connect to standalone MongoDB (${err.message}).`);
+    if (isCloudAtlas) {
+      console.error('❌ Failed to connect to MongoDB Atlas:', err.message);
+      console.error('👉 Please verify in MongoDB Atlas:');
+      console.error('   1. Database user password is correct in server/.env');
+      console.error('   2. Network Access -> IP Access List includes 0.0.0.0/0 (Allow from anywhere)');
+    } else {
+      console.warn(`Could not connect to local MongoDB (${err.message}).`);
+    }
+
     console.log('Initializing embedded MongoDB Memory Server for seamless fallback...');
 
     try {

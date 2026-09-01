@@ -1,6 +1,6 @@
 /**
  * API Service for Smartech Todo Application
- * Handles authenticated communication with Express backend REST endpoints.
+ * Handles authenticated communication with Express backend REST endpoints and OTP services.
  */
 
 const getAuthHeaders = () => {
@@ -15,7 +15,58 @@ const getAuthHeaders = () => {
 };
 
 export const api = {
-  // ==================== AUTH APIS ====================
+  // ==================== AUTH & OTP APIS ====================
+
+  /**
+   * Step 1: Send 6-digit OTP code to email for signup verification
+   */
+  async sendSignupOtp(userData) {
+    const res = await fetch('/api/auth/send-signup-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(userData),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to send verification code');
+    }
+    return data;
+  },
+
+  /**
+   * Step 2: Verify 6-digit OTP and complete account creation
+   */
+  async verifySignupOtp(email, otp) {
+    const res = await fetch('/api/auth/verify-signup-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, otp }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Invalid or expired verification code');
+    }
+    if (data.token) {
+      localStorage.setItem('smartech_token', data.token);
+    }
+    return data;
+  },
+
+  /**
+   * Resend fresh 6-digit OTP
+   */
+  async resendOtp(email) {
+    const res = await fetch('/api/auth/resend-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to resend code');
+    }
+    return data;
+  },
 
   /**
    * Log in an existing user
@@ -29,25 +80,6 @@ export const api = {
     const data = await res.json();
     if (!res.ok) {
       throw new Error(data.message || 'Login failed');
-    }
-    if (data.token) {
-      localStorage.setItem('smartech_token', data.token);
-    }
-    return data;
-  },
-
-  /**
-   * Register a new user
-   */
-  async register(userData) {
-    const res = await fetch('/api/auth/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(userData),
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error(data.message || 'Registration failed');
     }
     if (data.token) {
       localStorage.setItem('smartech_token', data.token);
