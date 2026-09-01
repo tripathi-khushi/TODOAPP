@@ -10,12 +10,20 @@ import TodoCard from '../../components/TodoCard';
 import TodoModal from '../../components/TodoModal';
 import FilterBar from '../../components/FilterBar';
 import Toast from '../../components/Toast';
+import ClassesView from '../../components/ClassesView';
+import GradesView from '../../components/GradesView';
+import ScheduleView from '../../components/ScheduleView';
+import MessagesView from '../../components/MessagesView';
+import SettingsView from '../../components/SettingsView';
 import { api } from '../../services/api';
-import { Plus, ListTodo, AlertCircle, CheckCircle } from 'lucide-react';
+import { Plus, ListTodo } from 'lucide-react';
 import '../../styles/theme.css';
 import '../../styles/dashboard.css';
 
 export function App() {
+  // Active Navigation Tab State (dashboard, todos, classes, grades, schedule, messages, settings)
+  const [activeTab, setActiveTab] = useState('dashboard');
+
   const [todos, setTodos] = useState([]);
   const [stats, setStats] = useState({
     total: 0,
@@ -46,6 +54,23 @@ export function App() {
     setTimeout(() => {
       setToast((prev) => (prev?.message === message ? null : prev));
     }, 4000);
+  };
+
+  // Sync tab with URL query parameter on initial load or popstate
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tabParam = params.get('tab');
+    if (tabParam && ['dashboard', 'todos', 'classes', 'grades', 'schedule', 'messages', 'settings'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, []);
+
+  // Handle Tab Switch
+  const handleSelectTab = (tabKey) => {
+    setActiveTab(tabKey);
+    const url = new URL(window.location);
+    url.searchParams.set('tab', tabKey);
+    window.history.pushState({}, '', url);
   };
 
   // Load Todos from API
@@ -192,28 +217,117 @@ export function App() {
     setIsModalOpen(true);
   };
 
-  return (
-    <div className="app-viewport">
-      <div className="app-canvas">
-        {/* Left Sidebar matching reference layout */}
-        <Sidebar activePage="dashboard" />
+  // Render main view based on active sidebar tab
+  const renderMainContent = () => {
+    switch (activeTab) {
+      case 'classes':
+        return (
+          <ClassesView 
+            onSelectCategory={(cat) => {
+              setCategoryFilter(cat);
+              handleSelectTab('todos');
+            }}
+            onNavigateToMessages={() => handleSelectTab('messages')}
+          />
+        );
 
-        {/* Center & Right Content Area */}
-        <main className="dashboard-main">
-          {/* Header Bar */}
-          <Header
-            title="HELLO, SOPHIA!"
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
+      case 'grades':
+        return <GradesView />;
+
+      case 'schedule':
+        return (
+          <ScheduleView 
+            todos={todos}
             onOpenAddModal={() => {
               setEditingTodo(null);
               setIsModalOpen(true);
             }}
+          />
+        );
+
+      case 'messages':
+        return <MessagesView />;
+
+      case 'settings':
+        return (
+          <SettingsView 
             onSeedData={handleSeedData}
             isSeeding={isSeeding}
+            onShowToast={showToast}
           />
+        );
 
-          {/* Grid Layout (Center Content + Right Circular Gauge Column) */}
+      case 'todos':
+        return (
+          <div className="section-view-container">
+            <div className="section-view-header">
+              <div>
+                <h2 className="section-main-heading">Task & Assignment Manager</h2>
+                <p className="section-sub-heading">Organize coursework, homework deadlines, and milestones</p>
+              </div>
+            </div>
+
+            {/* Filter and Sort Toolbar */}
+            <FilterBar
+              statusFilter={statusFilter}
+              onStatusChange={setStatusFilter}
+              categoryFilter={categoryFilter}
+              onCategoryChange={setCategoryFilter}
+              priorityFilter={priorityFilter}
+              onPriorityChange={setPriorityFilter}
+              sortBy={sortBy}
+              onSortChange={setSortBy}
+              onOpenAddModal={() => {
+                setEditingTodo(null);
+                setIsModalOpen(true);
+              }}
+              totalCount={todos.length}
+            />
+
+            {/* Todos List Items */}
+            {isLoading ? (
+              <div className="empty-state-box">
+                <p>Loading tasks from database...</p>
+              </div>
+            ) : todos.length === 0 ? (
+              <div className="empty-state-box">
+                <ListTodo size={36} className="empty-state-icon" />
+                <h4 className="empty-state-title">No tasks found</h4>
+                <p className="empty-state-desc">
+                  {searchTerm || statusFilter !== 'All' || categoryFilter !== 'All'
+                    ? 'Try adjusting your search terms or filter criteria.'
+                    : 'You do not have any tasks yet. Create a new task to get started!'}
+                </p>
+                <button
+                  className="btn-pill btn-primary"
+                  onClick={() => {
+                    setEditingTodo(null);
+                    setIsModalOpen(true);
+                  }}
+                >
+                  <Plus size={15} />
+                  <span>Add New Task</span>
+                </button>
+              </div>
+            ) : (
+              <div className="todos-list-container">
+                {todos.map((todo) => (
+                  <TodoCard
+                    key={todo._id}
+                    todo={todo}
+                    onToggleComplete={handleToggleComplete}
+                    onEdit={handleEditTodo}
+                    onDelete={handleDeleteTodo}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        );
+
+      case 'dashboard':
+      default:
+        return (
           <div className="dashboard-grid-layout">
             {/* Center Main Dashboard Content */}
             <div className="center-content-column">
@@ -227,7 +341,10 @@ export function App() {
               <CalendarCard scheduleItems={stats.upcomingSchedule} />
 
               {/* Row 3: Projects Preview Card (Matching Reference "My projects") */}
-              <ProjectsCard onFilterCategory={setCategoryFilter} />
+              <ProjectsCard onFilterCategory={(cat) => {
+                setCategoryFilter(cat);
+                handleSelectTab('todos');
+              }} />
 
               {/* Row 4: Dedicated Interactive Todos List Section */}
               <section className="todos-section-wrapper" id="todos-section">
@@ -305,6 +422,36 @@ export function App() {
               />
             </aside>
           </div>
+        );
+    }
+  };
+
+  return (
+    <div className="app-viewport">
+      <div className="app-canvas">
+        {/* Left Sidebar matching reference layout */}
+        <Sidebar 
+          activePage={activeTab} 
+          onSelectPage={handleSelectTab} 
+        />
+
+        {/* Center & Right Content Area */}
+        <main className="dashboard-main">
+          {/* Header Bar */}
+          <Header
+            title={activeTab === 'dashboard' ? 'HELLO, SOPHIA!' : activeTab.toUpperCase()}
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            onOpenAddModal={() => {
+              setEditingTodo(null);
+              setIsModalOpen(true);
+            }}
+            onSeedData={handleSeedData}
+            isSeeding={isSeeding}
+          />
+
+          {/* Dynamic Main Body Content */}
+          {renderMainContent()}
         </main>
       </div>
 

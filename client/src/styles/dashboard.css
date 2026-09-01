@@ -16,6 +16,10 @@
   padding: 0 8px;
 }
 
+.brand-logo-link {
+  text-decoration: none;
+}
+
 .brand-text {
   font-family: var(--font-heading);
   font-size: 1.6rem;
@@ -36,6 +40,11 @@
   padding: 8px 12px;
   background: var(--card-tint-light);
   border-radius: var(--radius-md);
+  transition: all var(--transition-normal);
+}
+.user-profile-widget:hover {
+  background: var(--card-tint);
+  transform: translateY(-1px);
 }
 
 .avatar-wrapper {
@@ -94,6 +103,7 @@
   font-weight: 600;
   transition: all var(--transition-normal);
   text-decoration: none;
+  cursor: pointer;
 }
 
 .nav-icon-box {
@@ -1302,4 +1312,710 @@
 }
 .toast-close-btn:hover {
   color: var(--text-primary);
+}
+
+/* =========================================================
+   NEW INTERACTIVE SECTIONS (CLASSES, GRADES, SCHEDULE, MESSAGES, SETTINGS)
+   ========================================================= */
+
+.section-view-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  animation: fadeIn 0.25s ease;
+}
+
+.section-view-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.section-main-heading {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.section-sub-heading {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* 1. Classes Cards Grid */
+.classes-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.class-course-card {
+  background: #ffffff;
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  border: 1px solid rgba(220, 200, 215, 0.6);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: all var(--transition-normal);
+}
+.class-course-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.class-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.class-code-badge {
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  border: 1.5px solid;
+}
+
+.class-card-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.class-card-desc {
+  font-size: 0.84rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+.class-teacher-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--card-tint-light);
+  border-radius: var(--radius-md);
+}
+
+.class-teacher-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.class-teacher-info {
+  flex: 1;
+}
+
+.teacher-label {
+  display: block;
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.teacher-fullname {
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.class-msg-btn {
+  background: #ffffff;
+}
+
+.class-progress-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.class-progress-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.class-progress-track {
+  width: 100%;
+  height: 8px;
+  background: var(--card-tint-light);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+
+.class-progress-bar {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  transition: width 0.4s ease;
+}
+
+.class-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 8px;
+  border-top: 1px solid #f0e6ec;
+  font-size: 0.8rem;
+}
+
+.class-next-schedule {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.class-view-tasks-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 700;
+  color: #624b5d;
+  font-size: 0.82rem;
+}
+.class-view-tasks-btn:hover {
+  color: var(--text-primary);
+}
+
+/* 2. Grades View */
+.grades-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 18px;
+}
+
+.grade-metric-card {
+  background: #ffffff;
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border: 1px solid rgba(220, 200, 215, 0.5);
+  box-shadow: var(--shadow-card);
+}
+
+.grade-metric-card.highlight {
+  background: linear-gradient(135deg, #74526e, #55374f);
+  color: #ffffff;
+}
+.grade-metric-card.highlight .grade-metric-label {
+  color: #ebdce5;
+}
+.grade-metric-card.highlight .grade-metric-val {
+  color: #ffffff;
+}
+.grade-metric-card.highlight .grade-metric-sub {
+  color: #ffd1e8;
+}
+
+.grade-metric-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.grade-metric-icon.secondary {
+  background: #e0f7f5;
+}
+.grade-metric-icon.tertiary {
+  background: #fce8f1;
+}
+
+.grade-metric-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.grade-metric-val {
+  font-size: 1.6rem;
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--text-primary);
+}
+.grade-metric-val span {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.grade-metric-sub {
+  display: block;
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.grades-table-card {
+  background: #ffffff;
+}
+
+.grades-table-wrapper {
+  overflow-x: auto;
+}
+
+.grades-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.86rem;
+}
+
+.grades-table th {
+  padding: 12px 14px;
+  background: var(--card-tint-light);
+  color: var(--text-secondary);
+  font-weight: 700;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.grades-table td {
+  padding: 14px;
+  border-bottom: 1px solid #f0e6ec;
+}
+
+.assignment-cell {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.assignment-icon {
+  color: #8c7185;
+  margin-top: 2px;
+}
+
+.assignment-feedback {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-style: italic;
+  margin-top: 2px;
+}
+
+.grade-pill {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  font-weight: 800;
+  font-size: 0.8rem;
+}
+.grade-pill.grade-a {
+  background: #e6f4ea;
+  color: #137333;
+}
+.grade-pill.grade-b {
+  background: #e8f0fe;
+  color: #1a73e8;
+}
+
+/* 3. Schedule View */
+.schedule-full-layout {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 24px;
+}
+
+@media (max-width: 950px) {
+  .schedule-full-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.schedule-agenda-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.agenda-event-card {
+  display: flex;
+  gap: 20px;
+  background: #ffffff;
+  padding: 18px 20px;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(220, 200, 215, 0.5);
+  border-left: 5px solid;
+  box-shadow: 0 2px 8px rgba(90, 60, 80, 0.04);
+}
+
+@media (max-width: 600px) {
+  .agenda-event-card {
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+
+.agenda-time-box {
+  min-width: 140px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.agenda-day-text {
+  font-weight: 800;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+
+.agenda-hours-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.76rem;
+  color: var(--text-muted);
+}
+
+.agenda-details-box {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.agenda-top-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.agenda-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.agenda-meta-row {
+  display: flex;
+  gap: 16px;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  flex-wrap: wrap;
+}
+
+.agenda-location {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* 4. Messages View */
+.messages-layout-box {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  background: #ffffff;
+  border-radius: var(--radius-xl);
+  border: 1px solid rgba(220, 200, 215, 0.5);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  min-height: 520px;
+}
+
+@media (max-width: 860px) {
+  .messages-layout-box {
+    grid-template-columns: 1fr;
+  }
+}
+
+.messages-contacts-pane {
+  background: var(--canvas-card);
+  border-right: 1px solid rgba(220, 200, 215, 0.5);
+  display: flex;
+  flex-direction: column;
+}
+
+.contacts-header {
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(220, 200, 215, 0.5);
+}
+
+.contacts-list {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.contact-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(220, 200, 215, 0.3);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.contact-item:hover {
+  background: var(--card-tint);
+}
+.contact-item.active {
+  background: #ffffff;
+}
+
+.contact-avatar-wrap {
+  position: relative;
+}
+
+.contact-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.online-dot {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 9px;
+  height: 9px;
+  background: #22c55e;
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+}
+
+.contact-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.contact-name {
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.contact-role {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.contact-last-msg {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 3px;
+}
+
+/* Chat Pane */
+.messages-chat-pane {
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+}
+
+.chat-top-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  border-bottom: 1px solid #f0e6ec;
+}
+
+.chat-contact-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.chat-header-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.chat-contact-name {
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.chat-contact-status {
+  font-size: 0.72rem;
+  color: #22c55e;
+  font-weight: 600;
+}
+
+.chat-header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.chat-messages-stream {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: #fdfafc;
+}
+
+.chat-bubble-row {
+  display: flex;
+}
+.chat-bubble-row.incoming {
+  justify-content: flex-start;
+}
+.chat-bubble-row.outgoing {
+  justify-content: flex-end;
+}
+
+.chat-bubble {
+  max-width: 70%;
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+
+.bubble-them {
+  background: #ffffff;
+  color: var(--text-primary);
+  border: 1px solid rgba(220, 200, 215, 0.6);
+  border-bottom-left-radius: 4px;
+}
+
+.bubble-me {
+  background: #624b5d;
+  color: #ffffff;
+  border-bottom-right-radius: 4px;
+}
+
+.bubble-time {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  font-size: 0.68rem;
+  opacity: 0.75;
+  margin-top: 4px;
+}
+
+.chat-input-row {
+  display: flex;
+  gap: 10px;
+  padding: 16px 20px;
+  border-top: 1px solid #f0e6ec;
+  background: #ffffff;
+}
+
+.chat-text-input {
+  flex: 1;
+  background: var(--card-tint-light);
+  border-radius: var(--radius-pill);
+  padding: 10px 18px;
+  font-size: 0.88rem;
+}
+
+.chat-send-btn {
+  background: #624b5d;
+  color: #ffffff;
+}
+
+/* 5. Settings View */
+.settings-cards-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 800px) {
+  .settings-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.settings-card {
+  background: #ffffff;
+}
+
+.settings-profile-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 0 16px;
+  border-bottom: 1px solid #f0e6ec;
+}
+
+.settings-avatar-img {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #8c7185;
+}
+
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.settings-toggle-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.settings-toggle-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f0e6ec;
+}
+
+.toggle-title {
+  display: block;
+  font-size: 0.88rem;
+  color: var(--text-primary);
+}
+
+.toggle-desc {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}
+
+.custom-toggle {
+  width: 40px;
+  height: 22px;
+  cursor: pointer;
+  accent-color: #624b5d;
+}
+
+.system-health-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--card-tint-light);
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+}
+
+.health-item {
+  display: flex;
+  justify-content: space-between;
 }

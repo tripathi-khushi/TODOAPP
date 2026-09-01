@@ -10,18 +10,34 @@ import {
   CheckSquare
 } from 'lucide-react';
 
-export const Sidebar = ({ activePage = 'dashboard' }) => {
+export const Sidebar = ({ activePage = 'dashboard', onSelectPage }) => {
+  const handleNavClick = (pageKey, e) => {
+    if (onSelectPage) {
+      e.preventDefault();
+      onSelectPage(pageKey);
+    }
+  };
+
   return (
     <aside className="sidebar">
       {/* Brand Header */}
       <div className="sidebar-brand">
-        <div className="brand-logo">
+        <a 
+          href="/index.html" 
+          className="brand-logo-link"
+          onClick={(e) => handleNavClick('dashboard', e)}
+        >
           <span className="brand-text">Smar<span>t</span>ech</span>
-        </div>
+        </a>
       </div>
 
       {/* User Profile Card */}
-      <div className="user-profile-widget">
+      <div 
+        className="user-profile-widget"
+        onClick={(e) => handleNavClick('settings', e)}
+        style={{ cursor: 'pointer' }}
+        title="View Student Profile"
+      >
         <div className="avatar-wrapper">
           <img 
             src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80" 
@@ -39,8 +55,9 @@ export const Sidebar = ({ activePage = 'dashboard' }) => {
       {/* Navigation Menu */}
       <nav className="sidebar-nav">
         <a 
-          href="/index.html" 
+          href="/index.html?tab=dashboard" 
           className={`nav-item ${activePage === 'dashboard' ? 'active' : ''}`}
+          onClick={(e) => handleNavClick('dashboard', e)}
           id="nav-dashboard-link"
         >
           <div className="nav-icon-box">
@@ -50,8 +67,9 @@ export const Sidebar = ({ activePage = 'dashboard' }) => {
         </a>
 
         <a 
-          href="/index.html" 
+          href="/index.html?tab=todos" 
           className={`nav-item ${activePage === 'todos' ? 'active' : ''}`}
+          onClick={(e) => handleNavClick('todos', e)}
           id="nav-todos-link"
         >
           <div className="nav-icon-box">
@@ -61,9 +79,10 @@ export const Sidebar = ({ activePage = 'dashboard' }) => {
         </a>
 
         <a 
-          href="#classes" 
+          href="/index.html?tab=classes" 
           className={`nav-item ${activePage === 'classes' ? 'active' : ''}`}
-          onClick={(e) => { e.preventDefault(); }}
+          onClick={(e) => handleNavClick('classes', e)}
+          id="nav-classes-link"
         >
           <div className="nav-icon-box">
             <GraduationCap size={18} />
@@ -72,9 +91,10 @@ export const Sidebar = ({ activePage = 'dashboard' }) => {
         </a>
 
         <a 
-          href="#grades" 
+          href="/index.html?tab=grades" 
           className={`nav-item ${activePage === 'grades' ? 'active' : ''}`}
-          onClick={(e) => { e.preventDefault(); }}
+          onClick={(e) => handleNavClick('grades', e)}
+          id="nav-grades-link"
         >
           <div className="nav-icon-box">
             <Award size={18} />
@@ -83,9 +103,10 @@ export const Sidebar = ({ activePage = 'dashboard' }) => {
         </a>
 
         <a 
-          href="#schedule" 
+          href="/index.html?tab=schedule" 
           className={`nav-item ${activePage === 'schedule' ? 'active' : ''}`}
-          onClick={(e) => { e.preventDefault(); }}
+          onClick={(e) => handleNavClick('schedule', e)}
+          id="nav-schedule-link"
         >
           <div className="nav-icon-box">
             <CalendarDays size={18} />
@@ -94,9 +115,10 @@ export const Sidebar = ({ activePage = 'dashboard' }) => {
         </a>
 
         <a 
-          href="#messages" 
+          href="/index.html?tab=messages" 
           className={`nav-item ${activePage === 'messages' ? 'active' : ''}`}
-          onClick={(e) => { e.preventDefault(); }}
+          onClick={(e) => handleNavClick('messages', e)}
+          id="nav-messages-link"
         >
           <div className="nav-icon-box">
             <MessageSquare size={18} />
@@ -105,9 +127,10 @@ export const Sidebar = ({ activePage = 'dashboard' }) => {
         </a>
 
         <a 
-          href="#setting" 
-          className={`nav-item ${activePage === 'setting' ? 'active' : ''}`}
-          onClick={(e) => { e.preventDefault(); }}
+          href="/index.html?tab=settings" 
+          className={`nav-item ${activePage === 'settings' ? 'active' : ''}`}
+          onClick={(e) => handleNavClick('settings', e)}
+          id="nav-settings-link"
         >
           <div className="nav-icon-box">
             <Settings size={18} />
@@ -120,7 +143,7 @@ export const Sidebar = ({ activePage = 'dashboard' }) => {
       <div className="sidebar-footer">
         <button 
           className="logout-button" 
-          onClick={() => alert('Logged out. In production this would clear session.')}
+          onClick={() => alert('Logged out. In a live system, this clears authentication tokens and redirects to login.')}
           id="btn-logout"
         >
           <LogOut size={16} />
