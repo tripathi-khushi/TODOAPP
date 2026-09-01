@@ -13,7 +13,7 @@ const signToken = (id) => {
   });
 };
 
-// @desc    Step 1 of Signup: Validate details & send 6-digit OTP email
+// @desc    Step 1 of Signup: Validate details & send 6-digit OTP email to user's inbox
 // @route   POST /api/auth/send-signup-otp
 export const sendSignupOtp = async (req, res) => {
   try {
@@ -53,23 +53,19 @@ export const sendSignupOtp = async (req, res) => {
       avatar: avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
     };
 
-    // Dispatch OTP via Nodemailer
-    const result = await generateAndSendOtp(normalizedEmail, pendingUserData);
+    // Dispatch real email via Nodemailer
+    await generateAndSendOtp(normalizedEmail, pendingUserData);
 
     res.status(200).json({
       success: true,
-      message: result.isRealEmail 
-        ? `A 6-digit verification code has been sent to ${normalizedEmail}`
-        : `Verification code generated for ${normalizedEmail}`,
+      message: `A 6-digit verification code has been sent to your email (${normalizedEmail}). Please check your inbox or spam folder.`,
       email: normalizedEmail,
-      isRealEmail: result.isRealEmail,
-      devCode: result.devCode,
     });
   } catch (error) {
-    console.error('Error in sendSignupOtp:', error);
+    console.error('Error in sendSignupOtp:', error.message);
     res.status(500).json({
       success: false,
-      message: error.message || 'Failed to send verification code',
+      message: error.message || 'Failed to send verification email. Please verify email settings.',
     });
   }
 };
@@ -83,7 +79,7 @@ export const verifySignupOtp = async (req, res) => {
     if (!email || !otp) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide both email and the 6-digit verification code',
+        message: 'Please enter the 6-digit verification code sent to your email',
       });
     }
 
@@ -101,12 +97,12 @@ export const verifySignupOtp = async (req, res) => {
 
     const { userData } = verification;
 
-    // Check once again to avoid race condition
+    // Check once again to avoid duplicate creation
     let user = await User.findOne({ email: normalizedEmail });
     if (user) {
       return res.status(400).json({
         success: false,
-        message: 'Account already created. Please log in.',
+        message: 'Account already verified and created. Please log in.',
       });
     }
 
@@ -114,14 +110,13 @@ export const verifySignupOtp = async (req, res) => {
     user = new User({
       name: userData.name,
       email: normalizedEmail,
-      password: 'TEMPORARY_RAW_HOLDER', // Will be overwritten by direct hash
+      password: 'TEMPORARY_RAW_HOLDER',
       studentId: userData.studentId,
       major: userData.major,
       avatar: userData.avatar,
       isVerified: true,
     });
 
-    // Directly assign pre-hashed password without double hashing
     user.password = userData.passwordHash;
     await user.save({ validateBeforeSave: false });
 
@@ -151,7 +146,7 @@ export const verifySignupOtp = async (req, res) => {
   }
 };
 
-// @desc    Resend OTP to email
+// @desc    Resend OTP to user's email
 // @route   POST /api/auth/resend-otp
 export const resendOtp = async (req, res) => {
   try {
@@ -167,17 +162,15 @@ export const resendOtp = async (req, res) => {
     if (!existingOtp) {
       return res.status(400).json({
         success: false,
-        message: 'No pending registration found for this email. Please restart signup.',
+        message: 'No pending verification found for this email. Please restart registration.',
       });
     }
 
-    const result = await generateAndSendOtp(normalizedEmail, existingOtp.pendingUserData);
+    await generateAndSendOtp(normalizedEmail, existingOtp.pendingUserData);
 
     res.status(200).json({
       success: true,
-      message: `A fresh 6-digit verification code has been generated for ${normalizedEmail}`,
-      isRealEmail: result.isRealEmail,
-      devCode: result.devCode,
+      message: `A fresh 6-digit verification code has been sent to ${normalizedEmail}`,
     });
   } catch (error) {
     res.status(500).json({
