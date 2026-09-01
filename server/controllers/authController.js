@@ -54,12 +54,16 @@ export const sendSignupOtp = async (req, res) => {
     };
 
     // Dispatch OTP via Nodemailer
-    await generateAndSendOtp(normalizedEmail, pendingUserData);
+    const result = await generateAndSendOtp(normalizedEmail, pendingUserData);
 
     res.status(200).json({
       success: true,
-      message: `A 6-digit verification code has been sent to ${normalizedEmail}`,
+      message: result.isRealEmail 
+        ? `A 6-digit verification code has been sent to ${normalizedEmail}`
+        : `Verification code generated for ${normalizedEmail}`,
       email: normalizedEmail,
+      isRealEmail: result.isRealEmail,
+      devCode: result.devCode,
     });
   } catch (error) {
     console.error('Error in sendSignupOtp:', error);
@@ -167,11 +171,13 @@ export const resendOtp = async (req, res) => {
       });
     }
 
-    await generateAndSendOtp(normalizedEmail, existingOtp.pendingUserData);
+    const result = await generateAndSendOtp(normalizedEmail, existingOtp.pendingUserData);
 
     res.status(200).json({
       success: true,
-      message: `A new 6-digit verification code has been sent to ${normalizedEmail}`,
+      message: `A fresh 6-digit verification code has been generated for ${normalizedEmail}`,
+      isRealEmail: result.isRealEmail,
+      devCode: result.devCode,
     });
   } catch (error) {
     res.status(500).json({

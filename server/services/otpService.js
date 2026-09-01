@@ -53,12 +53,14 @@ export const generateAndSendOtp = async (email, pendingUserData) => {
     createdAt: new Date(),
   });
 
+  const isRealEmailConfigured = Boolean(process.env.EMAIL_USER && process.env.EMAIL_PASS);
+
   // 4. Send Email via Nodemailer
   try {
     const transporter = await getTransporter();
 
     const mailOptions = {
-      from: '"Smartech Security" <noreply@smartech.edu>',
+      from: `"Smartech Security" <${process.env.EMAIL_USER || 'noreply@smartech.edu'}>`,
       to: normalizedEmail,
       subject: `Your Smartech Verification Code: ${otpCode}`,
       html: `
@@ -98,19 +100,32 @@ export const generateAndSendOtp = async (email, pendingUserData) => {
     console.log('====================================================');
     console.log(`✉️  OTP EMAIL DISPATCHED to: ${normalizedEmail}`);
     console.log(`🔢 VERIFICATION CODE:       ${otpCode}`);
-    if (nodemailer.getTestMessageUrl(info)) {
-      console.log(`🌐 Preview URL:             ${nodemailer.getTestMessageUrl(info)}`);
+    if (!isRealEmailConfigured) {
+      console.log(`⚠️  Note: Real EMAIL_USER/EMAIL_PASS not set in server/.env.`);
+      console.log(`👉 Code is printed above for instant testing!`);
+      if (nodemailer.getTestMessageUrl(info)) {
+        console.log(`🌐 Preview Email:           ${nodemailer.getTestMessageUrl(info)}`);
+      }
     }
     console.log('====================================================');
 
-    return { success: true, email: normalizedEmail };
+    return { 
+      success: true, 
+      email: normalizedEmail,
+      isRealEmail: isRealEmailConfigured,
+      devCode: isRealEmailConfigured ? undefined : otpCode 
+    };
   } catch (emailError) {
-    console.error('Failed to send email via Nodemailer:', emailError);
-    // Still log code in console for development fallback
+    console.error('Failed to send email via Nodemailer:', emailError.message);
     console.log('====================================================');
     console.log(`🔢 [DEV FALLBACK] OTP CODE for ${normalizedEmail}: ${otpCode}`);
     console.log('====================================================');
-    return { success: true, email: normalizedEmail, devCode: otpCode };
+    return { 
+      success: true, 
+      email: normalizedEmail, 
+      isRealEmail: false,
+      devCode: otpCode 
+    };
   }
 };
 

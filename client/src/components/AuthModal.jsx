@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, LogIn, UserPlus, Lock, Mail, User, AlertCircle, CheckCircle2, RotateCw, ArrowLeft, ShieldCheck } from 'lucide-react';
+import { X, LogIn, UserPlus, Lock, Mail, User, AlertCircle, CheckCircle2, RotateCw, ArrowLeft, ShieldCheck, KeyRound } from 'lucide-react';
 import { api } from '../services/api';
 
 export const AuthModal = ({ 
@@ -20,6 +20,7 @@ export const AuthModal = ({
 
   // OTP State (6 individual digits)
   const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
+  const [devCodeHint, setDevCodeHint] = useState('');
   const otpInputsRef = useRef([]);
 
   const [error, setError] = useState('');
@@ -43,6 +44,7 @@ export const AuthModal = ({
   useEffect(() => {
     setError('');
     setSuccessMessage('');
+    setDevCodeHint('');
     if (!isOpen) {
       setSignupStep('form');
       setOtpDigits(['', '', '', '', '', '']);
@@ -80,6 +82,7 @@ export const AuthModal = ({
     e.preventDefault();
     setError('');
     setSuccessMessage('');
+    setDevCodeHint('');
 
     if (!fullName.trim()) {
       setError('Please enter your full name');
@@ -107,7 +110,12 @@ export const AuthModal = ({
       if (res.success) {
         setSignupStep('otp');
         setResendCooldown(60);
-        setSuccessMessage(`Verification code sent to ${email.trim()}`);
+        setSuccessMessage(res.message || `Verification code sent to ${email.trim()}`);
+        
+        if (res.devCode) {
+          setDevCodeHint(res.devCode);
+        }
+
         // Focus first OTP box
         setTimeout(() => {
           otpInputsRef.current[0]?.focus();
@@ -156,6 +164,9 @@ export const AuthModal = ({
       if (res.success) {
         setResendCooldown(60);
         setSuccessMessage('A fresh 6-digit verification code has been sent!');
+        if (res.devCode) {
+          setDevCodeHint(res.devCode);
+        }
         setOtpDigits(['', '', '', '', '', '']);
         otpInputsRef.current[0]?.focus();
       }
@@ -198,6 +209,14 @@ export const AuthModal = ({
   const handleKeyDown = (index, e) => {
     if (e.key === 'Backspace' && !otpDigits[index] && index > 0) {
       otpInputsRef.current[index - 1]?.focus();
+    }
+  };
+
+  // Quick fill helper when devCode is active
+  const handleQuickFillDevCode = () => {
+    if (devCodeHint) {
+      const digits = devCodeHint.split('');
+      setOtpDigits(digits);
     }
   };
 
@@ -415,8 +434,37 @@ export const AuthModal = ({
               </p>
             </div>
 
+            {/* Dev Code Helper Banner */}
+            {devCodeHint && (
+              <div 
+                onClick={handleQuickFillDevCode}
+                style={{
+                  background: 'linear-gradient(135deg, #f7edf4, #ebdce5)',
+                  border: '1.5px dashed #a85597',
+                  borderRadius: '10px',
+                  padding: '10px 14px',
+                  margin: '8px 0',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  cursor: 'pointer',
+                }}
+                title="Click to auto-fill"
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <KeyRound size={16} color="#a85597" />
+                  <span style={{ fontSize: '0.8rem', color: '#3d2839', fontWeight: 600 }}>
+                    Terminal Code: <strong style={{ fontFamily: 'monospace', fontSize: '1rem', color: '#624b5d', letterSpacing: '2px' }}>{devCodeHint}</strong>
+                  </span>
+                </div>
+                <span style={{ fontSize: '0.72rem', background: '#624b5d', color: '#ffffff', padding: '3px 8px', borderRadius: '12px', fontWeight: 700 }}>
+                  Auto-fill
+                </span>
+              </div>
+            )}
+
             {/* 6-Digit OTP Boxes */}
-            <div className="otp-inputs-grid" style={{ display: 'flex', gap: '8px', justifyContent: 'center', margin: '16px 0' }}>
+            <div className="otp-inputs-grid" style={{ display: 'flex', gap: '8px', justifyContent: 'center', margin: '14px 0' }}>
               {otpDigits.map((digit, idx) => (
                 <input
                   key={idx}
