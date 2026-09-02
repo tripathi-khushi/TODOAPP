@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from '../../components/Sidebar';
-import Header from '../../components/Header';
 import Toast from '../../components/Toast';
 import { api } from '../../services/api';
 import { 
@@ -14,7 +13,6 @@ import {
   AlertCircle, 
   Tag, 
   ListChecks,
-  ExternalLink,
   Layers,
   Flag,
   FileText
@@ -26,6 +24,7 @@ import '../../styles/todoDetail.css';
 export function TodoApp() {
   const [todoId, setTodoId] = useState(null);
   const [todo, setTodo] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -50,19 +49,30 @@ export function TodoApp() {
     }, 4000);
   };
 
-  // 1. Extract todo_id query parameter from URL
+  // 1. Fetch user session and extract todo_id query parameter
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const id = params.get('todo_id');
+    const initPage = async () => {
+      try {
+        const userRes = await api.getMe();
+        if (userRes.success && userRes.user) {
+          setCurrentUser(userRes.user);
+        }
+      } catch (e) {}
 
-    if (!id) {
-      setErrorMessage('No Todo ID provided in the URL query parameter (e.g. ?todo_id=...)');
-      setIsLoading(false);
-      return;
-    }
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get('todo_id');
 
-    setTodoId(id);
-    fetchTodoDetails(id);
+      if (!id) {
+        setErrorMessage('No Todo ID provided in the URL query parameter (e.g. ?todo_id=...)');
+        setIsLoading(false);
+        return;
+      }
+
+      setTodoId(id);
+      fetchTodoDetails(id);
+    };
+
+    initPage();
   }, []);
 
   // 2. Fetch specific task details
@@ -91,7 +101,7 @@ export function TodoApp() {
       }
     } catch (err) {
       console.error('Error fetching single todo:', err);
-      setErrorMessage(err.message || 'Task not found or invalid ID.');
+      setErrorMessage(err.message || 'Task not found or you do not have permission to view it.');
     } finally {
       setIsLoading(false);
     }
@@ -118,7 +128,6 @@ export function TodoApp() {
     subtask.isCompleted = !subtask.isCompleted;
     setSubtasks(updated);
 
-    // If subtask has MongoDB _id, patch it
     if (todoId && subtask._id) {
       try {
         await api.patchTodo(todoId, {
@@ -148,7 +157,6 @@ export function TodoApp() {
         }
       }
     } catch (err) {
-      // Fallback local update
       setSubtasks((prev) => [...prev, { title: newTitle, isCompleted: false }]);
     }
   };
@@ -189,7 +197,7 @@ export function TodoApp() {
       const res = await api.updateTodo(todoId, payload);
       if (res.success) {
         setTodo(res.data);
-        showToast('All changes saved successfully!');
+        showToast('All changes saved to database!');
       }
     } catch (err) {
       console.error('Error saving todo detail:', err);
@@ -207,8 +215,7 @@ export function TodoApp() {
 
     try {
       await api.deleteTodo(todoId);
-      alert('Task deleted successfully. Returning to Todos list...');
-      // MPA standard navigation back to Page 1
+      alert('Task deleted successfully from database. Returning to dashboard...');
       window.location.href = '/index.html';
     } catch (err) {
       showToast(err.message || 'Failed to delete task', 'error');
@@ -224,22 +231,21 @@ export function TodoApp() {
     <div className="app-viewport">
       <div className="app-canvas">
         {/* Left Sidebar */}
-        <Sidebar activePage="todos" />
+        <Sidebar activePage="todos" currentUser={currentUser} />
 
         {/* Center & Detail Content */}
         <main className="todo-detail-main">
           {/* Top Nav & Breadcrumbs */}
           <div className="detail-top-nav">
-            {/* MPA Standard Link back to Page 1 */}
             <a href="/index.html" className="btn-back-link" id="btn-back-to-todos">
               <ArrowLeft size={16} />
-              <span>Back to Todos List</span>
+              <span>Back to Dashboard</span>
             </a>
 
             <div className="detail-breadcrumbs">
               <a href="/index.html">Dashboard</a>
               <span>/</span>
-              <a href="/index.html#todos-section">Todos</a>
+              <a href="/index.html?tab=todos">Todos</a>
               <span>/</span>
               <span>{todo?.title || 'Task Details'}</span>
             </div>
@@ -248,12 +254,12 @@ export function TodoApp() {
           {/* Loading or Error State */}
           {isLoading ? (
             <div className="empty-state-box">
-              <p>Fetching task details from server...</p>
+              <p>Fetching task details from database...</p>
             </div>
           ) : errorMessage ? (
             <div className="empty-state-box">
               <AlertCircle size={44} color="#e53e3e" />
-              <h3 className="empty-state-title">Could not load task</h3>
+              <h3 className="empty-state-title">Access Restricted</h3>
               <p className="empty-state-desc">{errorMessage}</p>
               <a href="/index.html" className="btn-pill btn-primary">
                 Return to Dashboard
@@ -417,11 +423,9 @@ export function TodoApp() {
 
               {/* Sidebar / Meta Inspector Column */}
               <div className="detail-side-column">
-                {/* Meta Configuration Inspector */}
                 <div className="meta-inspector-card">
                   <h4 className="card-title" style={{ marginBottom: '8px' }}>Task Settings</h4>
 
-                  {/* Category Select */}
                   <div className="meta-field-row">
                     <label className="meta-field-label">
                       <Layers size={12} /> Category
@@ -441,7 +445,6 @@ export function TodoApp() {
                     </select>
                   </div>
 
-                  {/* Priority Select */}
                   <div className="meta-field-row">
                     <label className="meta-field-label">
                       <Flag size={12} /> Priority Level
@@ -459,7 +462,6 @@ export function TodoApp() {
                     </select>
                   </div>
 
-                  {/* Due Date */}
                   <div className="meta-field-row">
                     <label className="meta-field-label">
                       <Calendar size={12} /> Due Date
@@ -473,7 +475,6 @@ export function TodoApp() {
                     />
                   </div>
 
-                  {/* Time */}
                   <div className="meta-field-row">
                     <label className="meta-field-label">
                       <Clock size={12} /> Scheduled Time
@@ -487,7 +488,6 @@ export function TodoApp() {
                     />
                   </div>
 
-                  {/* MongoDB System Metadata */}
                   <div className="meta-field-row" style={{ marginTop: '8px', borderTop: '1px solid #f0e6ec', paddingTop: '12px' }}>
                     <span className="meta-field-label">Task ID (MongoDB)</span>
                     <span className="meta-id-badge">{todoId}</span>

@@ -8,16 +8,20 @@ import {
   updateProfile 
 } from '../controllers/authController.js';
 import { optionalAuth, protect } from '../middleware/authMiddleware.js';
+import { otpDispatchLimiter, authAttemptLimiter, sanitizeInputData } from '../middleware/securityMiddleware.js';
 
 const router = express.Router();
 
-// OTP Signup Flow
-router.post('/send-signup-otp', sendSignupOtp);
-router.post('/verify-signup-otp', verifySignupOtp);
-router.post('/resend-otp', resendOtp);
+// Apply sanitization to all auth routes
+router.use(sanitizeInputData);
 
-// Standard Login
-router.post('/login', login);
+// OTP Signup Flow (Protected against spam & brute force)
+router.post('/send-signup-otp', otpDispatchLimiter, sendSignupOtp);
+router.post('/verify-signup-otp', authAttemptLimiter, verifySignupOtp);
+router.post('/resend-otp', otpDispatchLimiter, resendOtp);
+
+// Standard Login (Protected against brute force)
+router.post('/login', authAttemptLimiter, login);
 
 // Protected User endpoints
 router.get('/me', optionalAuth, getMe);

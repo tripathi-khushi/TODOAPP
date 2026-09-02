@@ -1,12 +1,15 @@
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
+import helmet from 'helmet';
+import mongoSanitize from 'express-mongo-sanitize';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { connectDB } from './config/db.js';
 import todoRoutes from './routes/todoRoutes.js';
 import authRoutes from './routes/authRoutes.js';
+import { generalApiLimiter, sanitizeInputData } from './middleware/securityMiddleware.js';
 
 dotenv.config();
 
@@ -16,17 +19,38 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
-app.use(cors({
-  origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-}));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// 1. Security Headers (Helmet)
+app.use(
+  helmet({
+    contentSecurityPolicy: false, // Disabled for local development asset loading
+    crossOriginEmbedderPolicy: false,
+  })
+);
+
+// 2. CORS Lockdown
+app.use(
+  cors({
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  })
+);
+
+// 3. Body Parsers with payload limits
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+
+// 4. Data Sanitization against NoSQL query injection & XSS
+app.use(mongoSanitize());
+app.use(sanitizeInputData);
+
+// 5. Morgan Logging
 app.use(morgan('dev'));
 
-// API Routes
+// 6. Global API Rate Limiter
+app.use('/api', generalApiLimiter);
+
+// 7. API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/todos', todoRoutes);
 
@@ -36,6 +60,7 @@ app.get('/api/health', (req, res) => {
     status: 'online',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
+    security: 'Helmet + RateLimiter + MongoSanitize active',
   });
 });
 
@@ -76,6 +101,7 @@ const startServer = async () => {
     app.listen(PORT, () => {
       console.log(`=========================================`);
       console.log(`🚀 Smartech Server running on port ${PORT}`);
+      console.log(`🛡️  Security: Helmet + RateLimiting + MongoSanitize`);
       console.log(`📡 API Health:   http://localhost:${PORT}/api/health`);
       console.log(`🔐 Auth API:     http://localhost:${PORT}/api/auth`);
       console.log(`📋 Todos API:    http://localhost:${PORT}/api/todos`);

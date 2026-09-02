@@ -1,20 +1,23 @@
 import mongoose from 'mongoose';
 import Todo from '../models/Todo.js';
 
-// @desc    Get all todos with filtering, sorting, and search (isolated per user)
+// @desc    Get all todos with filtering, sorting, and search (strictly isolated per user)
 // @route   GET /api/todos
 export const getTodos = async (req, res) => {
   try {
     const { search, status, category, priority, sortBy = 'createdAt', order = 'desc' } = req.query;
 
-    const query = {};
-
-    // User isolation: If logged in, fetch user's tasks. If guest, fetch guest/public tasks
-    if (req.user && req.user._id) {
-      query.user = req.user._id;
-    } else {
-      query.user = null;
+    // Strict User Isolation: Authenticated user queries only their tasks
+    if (!req.user || !req.user._id) {
+      return res.status(200).json({
+        success: true,
+        count: 0,
+        data: [],
+        message: 'Guest mode: Please log in to view and manage your personal tasks',
+      });
     }
+
+    const query = { user: req.user._id };
 
     // Search keyword in title or description or tags
     if (search && search.trim() !== '') {
@@ -77,7 +80,7 @@ export const getTodos = async (req, res) => {
   }
 };
 
-// @desc    Get single todo by ID
+// @desc    Get single todo by ID (Strict ownership check)
 // @route   GET /api/todos/:id
 export const getTodoById = async (req, res) => {
   try {
@@ -90,12 +93,19 @@ export const getTodoById = async (req, res) => {
       });
     }
 
-    const todo = await Todo.findById(id);
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({
+        success: false,
+        message: 'Please log in to view task details',
+      });
+    }
+
+    const todo = await Todo.findOne({ _id: id, user: req.user._id });
 
     if (!todo) {
       return res.status(404).json({
         success: false,
-        message: `Todo item not found with ID: ${id}`,
+        message: `Task not found or you do not have permission to view it`,
       });
     }
 
@@ -113,10 +123,17 @@ export const getTodoById = async (req, res) => {
   }
 };
 
-// @desc    Create a new todo
+// @desc    Create a new todo for authenticated user
 // @route   POST /api/todos
 export const createTodo = async (req, res) => {
   try {
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({
+        success: false,
+        message: 'Please log in to create and save tasks in your database',
+      });
+    }
+
     const { title, description, category, priority, status, dueDate, time, subtasks, tags } = req.body;
 
     if (!title || title.trim() === '') {
@@ -129,7 +146,7 @@ export const createTodo = async (req, res) => {
     const isCompleted = status === 'Completed';
 
     const todo = await Todo.create({
-      user: req.user ? req.user._id : null,
+      user: req.user._id,
       title: title.trim(),
       description: description ? description.trim() : '',
       category: category || 'Academic',
@@ -144,19 +161,19 @@ export const createTodo = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'Todo created successfully in database',
+      message: 'Task saved to database successfully',
       data: todo,
     });
   } catch (error) {
     console.error('Error in createTodo:', error);
     res.status(400).json({
       success: false,
-      message: error.message || 'Failed to create todo',
+      message: error.message || 'Failed to create task',
     });
   }
 };
 
-// @desc    Update a todo completely
+// @desc    Update a todo completely (Strict ownership check)
 // @route   PUT /api/todos/:id
 export const updateTodo = async (req, res) => {
   try {
@@ -169,20 +186,19 @@ export const updateTodo = async (req, res) => {
       });
     }
 
-    const todo = await Todo.findById(id);
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({
+        success: false,
+        message: 'Please log in to update tasks',
+      });
+    }
+
+    const todo = await Todo.findOne({ _id: id, user: req.user._id });
 
     if (!todo) {
       return res.status(404).json({
         success: false,
-        message: `Todo item not found with ID: ${id}`,
-      });
-    }
-
-    // Verify ownership if task has a user and user is logged in
-    if (todo.user && req.user && todo.user.toString() !== req.user._id.toString()) {
-      return res.status(403).json({
-        success: false,
-        message: 'Not authorized to update this task',
+        message: `Task not found or you do not have permission to update it`,
       });
     }
 
@@ -209,19 +225,19 @@ export const updateTodo = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Todo updated successfully',
+      message: 'Task updated successfully in database',
       data: updatedTodo,
     });
   } catch (error) {
     console.error('Error in updateTodo:', error);
     res.status(400).json({
       success: false,
-      message: error.message || 'Failed to update todo',
+      message: error.message || 'Failed to update task',
     });
   }
 };
 
-// @desc    Partial update (e.g. toggle complete, toggle subtask)
+// @desc    Partial update (Strict ownership check)
 // @route   PATCH /api/todos/:id
 export const patchTodo = async (req, res) => {
   try {
@@ -234,12 +250,19 @@ export const patchTodo = async (req, res) => {
       });
     }
 
-    const todo = await Todo.findById(id);
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({
+        success: false,
+        message: 'Please log in to update tasks',
+      });
+    }
+
+    const todo = await Todo.findOne({ _id: id, user: req.user._id });
 
     if (!todo) {
       return res.status(404).json({
         success: false,
-        message: `Todo item not found with ID: ${id}`,
+        message: `Task not found or you do not have permission to modify it`,
       });
     }
 
@@ -275,7 +298,7 @@ export const patchTodo = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Todo status updated',
+      message: 'Task status updated in database',
       data: updatedTodo,
     });
   } catch (error) {
@@ -287,7 +310,7 @@ export const patchTodo = async (req, res) => {
   }
 };
 
-// @desc    Delete a todo
+// @desc    Delete a todo (Strict ownership check)
 // @route   DELETE /api/todos/:id
 export const deleteTodo = async (req, res) => {
   try {
@@ -300,20 +323,25 @@ export const deleteTodo = async (req, res) => {
       });
     }
 
-    const todo = await Todo.findById(id);
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({
+        success: false,
+        message: 'Please log in to delete tasks',
+      });
+    }
+
+    const todo = await Todo.findOneAndDelete({ _id: id, user: req.user._id });
 
     if (!todo) {
       return res.status(404).json({
         success: false,
-        message: `Todo item not found with ID: ${id}`,
+        message: `Task not found or you do not have permission to delete it`,
       });
     }
 
-    await Todo.findByIdAndDelete(id);
-
     res.status(200).json({
       success: true,
-      message: 'Todo deleted from database successfully',
+      message: 'Task deleted from database successfully',
       data: { id },
     });
   } catch (error) {
@@ -326,11 +354,28 @@ export const deleteTodo = async (req, res) => {
   }
 };
 
-// @desc    Get dashboard statistics computed dynamically from database
+// @desc    Get dashboard statistics strictly isolated for authenticated user
 // @route   GET /api/todos/stats
 export const getTodoStats = async (req, res) => {
   try {
-    const userQuery = req.user ? { user: req.user._id } : { user: null };
+    if (!req.user || !req.user._id) {
+      return res.status(200).json({
+        success: true,
+        data: {
+          total: 0,
+          completed: 0,
+          inProgress: 0,
+          pending: 0,
+          completionRate: 0,
+          homeworkRate: 0,
+          attendanceRate: 0,
+          ratingScore: 0,
+          upcomingSchedule: [],
+        },
+      });
+    }
+
+    const userQuery = { user: req.user._id };
 
     const total = await Todo.countDocuments(userQuery);
     const completed = await Todo.countDocuments({ ...userQuery, isCompleted: true });

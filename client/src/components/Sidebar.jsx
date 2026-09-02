@@ -1,10 +1,7 @@
 import React from 'react';
 import { 
   LayoutDashboard, 
-  GraduationCap, 
-  Award, 
   CalendarDays, 
-  MessageSquare, 
   Settings, 
   LogOut, 
   LogIn, 
@@ -74,7 +71,7 @@ export const Sidebar = ({
         </div>
       </div>
 
-      {/* Navigation Menu */}
+      {/* Navigation Menu (Clean Core Essentials) */}
       <nav className="sidebar-nav">
         <a 
           href="/index.html?tab=dashboard" 
@@ -101,30 +98,6 @@ export const Sidebar = ({
         </a>
 
         <a 
-          href="/index.html?tab=classes" 
-          className={`nav-item ${activePage === 'classes' ? 'active' : ''}`}
-          onClick={(e) => handleNavClick('classes', e)}
-          id="nav-classes-link"
-        >
-          <div className="nav-icon-box">
-            <GraduationCap size={18} />
-          </div>
-          <span className="nav-label">My classes</span>
-        </a>
-
-        <a 
-          href="/index.html?tab=grades" 
-          className={`nav-item ${activePage === 'grades' ? 'active' : ''}`}
-          onClick={(e) => handleNavClick('grades', e)}
-          id="nav-grades-link"
-        >
-          <div className="nav-icon-box">
-            <Award size={18} />
-          </div>
-          <span className="nav-label">My grades</span>
-        </a>
-
-        <a 
           href="/index.html?tab=schedule" 
           className={`nav-item ${activePage === 'schedule' ? 'active' : ''}`}
           onClick={(e) => handleNavClick('schedule', e)}
@@ -134,18 +107,6 @@ export const Sidebar = ({
             <CalendarDays size={18} />
           </div>
           <span className="nav-label">Schedule</span>
-        </a>
-
-        <a 
-          href="/index.html?tab=messages" 
-          className={`nav-item ${activePage === 'messages' ? 'active' : ''}`}
-          onClick={(e) => handleNavClick('messages', e)}
-          id="nav-messages-link"
-        >
-          <div className="nav-icon-box">
-            <MessageSquare size={18} />
-          </div>
-          <span className="nav-label">Messages</span>
         </a>
 
         <a 

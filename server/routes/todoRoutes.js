@@ -8,26 +8,19 @@ import {
   deleteTodo,
   getTodoStats,
 } from '../controllers/todoController.js';
-import { optionalAuth } from '../middleware/authMiddleware.js';
+import { optionalAuth, protect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-// Apply optionalAuth to all routes
-router.use(optionalAuth);
+// Public / Optional Auth endpoints (returns user-specific data if logged in, or empty guest state)
+router.get('/stats', optionalAuth, getTodoStats);
+router.get('/', optionalAuth, getTodos);
+router.get('/:id', optionalAuth, getTodoById);
 
-// Stats endpoint
-router.get('/stats', getTodoStats);
-
-// Root /api/todos routes
-router.route('/')
-  .get(getTodos)
-  .post(createTodo);
-
-// Item specific /api/todos/:id routes
-router.route('/:id')
-  .get(getTodoById)
-  .put(updateTodo)
-  .patch(patchTodo)
-  .delete(deleteTodo);
+// Protected Write Endpoints (Strictly require active user token)
+router.post('/', protect, createTodo);
+router.put('/:id', protect, updateTodo);
+router.patch('/:id', protect, patchTodo);
+router.delete('/:id', protect, deleteTodo);
 
 export default router;

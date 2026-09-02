@@ -3,18 +3,13 @@ import Sidebar from '../../components/Sidebar';
 import Header from '../../components/Header';
 import StatGauge from '../../components/StatGauge';
 import CalendarCard from '../../components/CalendarCard';
-import UpcomingEventsCard from '../../components/UpcomingEventsCard';
-import LinkedTeachersCard from '../../components/LinkedTeachersCard';
 import ProjectsCard from '../../components/ProjectsCard';
 import TodoCard from '../../components/TodoCard';
 import TodoModal from '../../components/TodoModal';
 import AuthModal from '../../components/AuthModal';
 import FilterBar from '../../components/FilterBar';
 import Toast from '../../components/Toast';
-import ClassesView from '../../components/ClassesView';
-import GradesView from '../../components/GradesView';
 import ScheduleView from '../../components/ScheduleView';
-import MessagesView from '../../components/MessagesView';
 import SettingsView from '../../components/SettingsView';
 import { api } from '../../services/api';
 import { Plus, ListTodo, LogIn } from 'lucide-react';
@@ -22,7 +17,7 @@ import '../../styles/theme.css';
 import '../../styles/dashboard.css';
 
 export function App() {
-  // Active Navigation Tab State (dashboard, todos, classes, grades, schedule, messages, settings)
+  // Active Navigation Tab State (Clean Core: dashboard, todos, schedule, settings)
   const [activeTab, setActiveTab] = useState('dashboard');
 
   // Real Authenticated User State from MongoDB (null if Guest)
@@ -66,7 +61,7 @@ export function App() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const tabParam = params.get('tab');
-    if (tabParam && ['dashboard', 'todos', 'classes', 'grades', 'schedule', 'messages', 'settings'].includes(tabParam)) {
+    if (tabParam && ['dashboard', 'todos', 'schedule', 'settings'].includes(tabParam)) {
       setActiveTab(tabParam);
     }
   }, []);
@@ -250,20 +245,6 @@ export function App() {
   // Render main view based on active sidebar tab
   const renderMainContent = () => {
     switch (activeTab) {
-      case 'classes':
-        return (
-          <ClassesView 
-            onSelectCategory={(cat) => {
-              setCategoryFilter(cat);
-              handleSelectTab('todos');
-            }}
-            onNavigateToMessages={() => handleSelectTab('messages')}
-          />
-        );
-
-      case 'grades':
-        return <GradesView />;
-
       case 'schedule':
         return (
           <ScheduleView 
@@ -274,9 +255,6 @@ export function App() {
             }}
           />
         );
-
-      case 'messages':
-        return <MessagesView />;
 
       case 'settings':
         return (
@@ -380,13 +358,7 @@ export function App() {
           <div className="dashboard-grid-layout">
             {/* Center Main Dashboard Content */}
             <div className="center-content-column">
-              {/* Row 1: Linked Teachers + Upcoming Events (Matching Reference Top Widgets) */}
-              <div className="widgets-dual-row">
-                <LinkedTeachersCard />
-                <UpcomingEventsCard />
-              </div>
-
-              {/* Row 2: Schedule & Calendar Card (Matching Reference "My shedule") */}
+              {/* Schedule & Calendar Card (Matching Reference "My schedule") */}
               <CalendarCard scheduleItems={stats.upcomingSchedule} />
 
               {/* Row 3: Projects Preview Card (Matching Reference "My projects") */}

@@ -120,6 +120,14 @@ export const verifySignupOtp = async (req, res) => {
     user.password = userData.passwordHash;
     await user.save({ validateBeforeSave: false });
 
+    // Seed initial personal coursework tasks for this user in MongoDB
+    try {
+      const { createStarterTasksForUser } = await import('../seeds/starterTasks.js');
+      await createStarterTasksForUser(user._id, user.major);
+    } catch (seedErr) {
+      console.warn('Could not seed initial tasks for user:', seedErr.message);
+    }
+
     // Issue JWT Token
     const token = signToken(user._id);
 

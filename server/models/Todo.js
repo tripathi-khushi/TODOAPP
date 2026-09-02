@@ -21,7 +21,7 @@ const TodoSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       index: true,
-      default: null,
+      required: [true, 'User ID is required for task ownership'],
     },
     title: {
       type: String,
@@ -73,6 +73,12 @@ const TodoSchema = new mongoose.Schema(
     toObject: { virtuals: true },
   }
 );
+
+// Compound indexes for optimal performance in multi-tenant queries
+TodoSchema.index({ user: 1, createdAt: -1 });
+TodoSchema.index({ user: 1, isCompleted: 1 });
+TodoSchema.index({ user: 1, status: 1 });
+TodoSchema.index({ user: 1, category: 1 });
 
 // Pre-save hook to keep status and isCompleted in sync
 TodoSchema.pre('save', function (next) {

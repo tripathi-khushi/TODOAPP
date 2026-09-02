@@ -1,5 +1,12 @@
 import mongoose from 'mongoose';
+import dns from 'dns';
 import { MongoMemoryServer } from 'mongodb-memory-server';
+
+try {
+  dns.setServers(['8.8.8.8', '1.1.1.1']);
+} catch (e) {
+  // DNS override fallback
+}
 
 let mongoMemoryServer = null;
 
