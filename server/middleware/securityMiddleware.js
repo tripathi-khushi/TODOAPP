@@ -31,17 +31,18 @@ export const otpDispatchLimiter = rateLimit({
 });
 
 /**
- * Strict Rate Limiter for Login and OTP Verification
- * Limits brute-force attempts to 5 per 5 minutes
+ * Rate Limiter for Login and OTP Verification
+ * Limits brute-force attempts to 30 per minute and skips successful logins
  */
 export const authAttemptLimiter = rateLimit({
-  windowMs: 5 * 60 * 1000, // 5 minutes
-  max: 8,
+  windowMs: 60 * 1000, // 1 minute
+  max: 30,
   standardHeaders: true,
   legacyHeaders: false,
+  skipSuccessfulRequests: true,
   message: {
     success: false,
-    message: 'Too many authentication attempts. Please wait 5 minutes before trying again.',
+    message: 'Too many authentication attempts. Please wait 60 seconds before trying again.',
   },
 });
 

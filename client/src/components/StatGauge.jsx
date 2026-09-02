@@ -1,5 +1,4 @@
 import React from 'react';
-import { ChevronRight } from 'lucide-react';
 
 export const StatGauge = ({ 
   attendance = 60, 
@@ -8,7 +7,6 @@ export const StatGauge = ({
   totalTasks = 0,
   completedTasks = 0
 }) => {
-  // SVG circular progress calculator
   const calculateCircle = (percentage, radius = 34) => {
     const circumference = 2 * Math.PI * radius;
     const offset = circumference - (percentage / 100) * circumference;
@@ -21,7 +19,6 @@ export const StatGauge = ({
 
   return (
     <div className="stats-column-card">
-      {/* Attendance Gauge */}
       <div className="gauge-box" id="gauge-attendance">
         <span className="gauge-label">Attendance</span>
         <div className="gauge-svg-container">
@@ -48,7 +45,6 @@ export const StatGauge = ({
         </div>
       </div>
 
-      {/* Homework Gauge */}
       <div className="gauge-box" id="gauge-homework">
         <span className="gauge-label">Homework</span>
         <div className="gauge-svg-container">
@@ -75,7 +71,6 @@ export const StatGauge = ({
         </div>
       </div>
 
-      {/* Rating Gauge */}
       <div className="gauge-box" id="gauge-rating">
         <span className="gauge-label">Rating</span>
         <div className="gauge-svg-container">
@@ -102,16 +97,13 @@ export const StatGauge = ({
         </div>
       </div>
 
-      {/* See More Link */}
-      <a 
-        href="#stats-details" 
-        className="gauge-see-more"
-        onClick={(e) => { e.preventDefault(); }}
-      >
-        <span>See more</span>
-        <ChevronRight size={16} />
-      </a>
+      {totalTasks > 0 && (
+        <div className="stats-summary-footer" style={{ textAlign: 'center', paddingTop: '10px', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+          <span>{completedTasks} of {totalTasks} tasks completed</span>
+        </div>
+      )}
     </div>
   );
 };
+
 export default StatGauge;

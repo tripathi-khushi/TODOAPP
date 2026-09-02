@@ -16,7 +16,8 @@ const OtpSchema = new mongoose.Schema(
     // Stash pending user data until OTP is confirmed
     pendingUserData: {
       name: { type: String, required: true },
-      passwordHash: { type: String, required: true },
+      password: { type: String },
+      passwordHash: { type: String },
       studentId: { type: String },
       major: { type: String },
       avatar: { type: String },

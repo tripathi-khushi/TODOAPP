@@ -40,14 +40,10 @@ export const sendSignupOtp = async (req, res) => {
       });
     }
 
-    // Pre-hash password
-    const salt = await bcrypt.genSalt(10);
-    const passwordHash = await bcrypt.hash(password, salt);
-
     // Stash pending registration data
     const pendingUserData = {
       name: name.trim(),
-      passwordHash,
+      password: password,
       studentId: studentId ? studentId.trim() : `ST-${Math.floor(1000 + Math.random() * 9000)}`,
       major: major ? major.trim() : 'Robotics & AI Engineering',
       avatar: avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
@@ -106,19 +102,18 @@ export const verifySignupOtp = async (req, res) => {
       });
     }
 
-    // Create user in MongoDB with pre-hashed password
+    // Create user in MongoDB (UserSchema.pre('save') will hash the password once properly)
     user = new User({
       name: userData.name,
       email: normalizedEmail,
-      password: 'TEMPORARY_RAW_HOLDER',
+      password: userData.password || userData.passwordHash,
       studentId: userData.studentId,
       major: userData.major,
       avatar: userData.avatar,
       isVerified: true,
     });
 
-    user.password = userData.passwordHash;
-    await user.save({ validateBeforeSave: false });
+    await user.save();
 
     // Seed initial personal coursework tasks for this user in MongoDB
     try {

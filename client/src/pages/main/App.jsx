@@ -365,18 +365,16 @@ export function App() {
       default:
         return (
           <div className="dashboard-grid-layout">
-            {/* Center Main Dashboard Content */}
+            {/* Main Content Column */}
             <div className="center-content-column">
-              {/* Schedule & Calendar Card (Matching Reference "My schedule") */}
               <CalendarCard scheduleItems={stats.upcomingSchedule} />
 
-              {/* Row 3: Projects Preview Card (Matching Reference "My projects") */}
               <ProjectsCard onFilterCategory={(cat) => {
                 setCategoryFilter(cat);
                 handleSelectTab('todos');
               }} />
 
-              {/* Row 4: Dedicated Interactive Todos List Section */}
+              {/* Tasks & Assignments Section */}
               <section className="todos-section-wrapper" id="todos-section">
                 <div className="section-header-row">
                   <h3 className="section-heading">All Tasks & Assignments</h3>
