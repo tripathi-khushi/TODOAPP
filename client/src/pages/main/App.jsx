@@ -39,10 +39,19 @@ export function App() {
     upcomingSchedule: [],
   });
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [priorityFilter, setPriorityFilter] = useState('All');
   const [sortBy, setSortBy] = useState('createdAt-desc');
+
+  // Debounce search term by 250ms for smooth typing and immediate responsiveness
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTodo, setEditingTodo] = useState(null);
@@ -121,7 +130,7 @@ export function App() {
       setIsLoading(true);
       const [field, order] = sortBy.split('-');
       const response = await api.getTodos({
-        search: searchTerm,
+        search: debouncedSearchTerm,
         status: statusFilter,
         category: categoryFilter,
         priority: priorityFilter,
@@ -138,7 +147,7 @@ export function App() {
     } finally {
       setIsLoading(false);
     }
-  }, [searchTerm, statusFilter, categoryFilter, priorityFilter, sortBy]);
+  }, [debouncedSearchTerm, statusFilter, categoryFilter, priorityFilter, sortBy]);
 
   // Load Stats from API
   const loadStats = useCallback(async () => {
@@ -472,11 +481,14 @@ export function App() {
 
         {/* Center & Right Content Area */}
         <main className="dashboard-main">
-          {/* Header Bar */}
+          {/* Header Bar with Live Functional Search */}
           <Header
             title={getHeaderGreeting()}
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
+            searchResults={todos}
+            onSelectTodo={handleEditTodo}
+            onViewAllResults={() => handleSelectTab('todos')}
             onOpenAddModal={() => {
               setEditingTodo(null);
               setIsModalOpen(true);

@@ -19,12 +19,17 @@ export const getTodos = async (req, res) => {
 
     const query = { user: req.user._id };
 
-    // Search keyword in title or description or tags
+    // Robust search across title, description, tags, category, priority, and subtask titles
     if (search && search.trim() !== '') {
+      const escaped = search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const searchRegex = new RegExp(escaped, 'i');
       query.$or = [
-        { title: { $regex: search.trim(), $options: 'i' } },
-        { description: { $regex: search.trim(), $options: 'i' } },
-        { tags: { $in: [new RegExp(search.trim(), 'i')] } },
+        { title: searchRegex },
+        { description: searchRegex },
+        { category: searchRegex },
+        { priority: searchRegex },
+        { tags: { $in: [searchRegex] } },
+        { 'subtasks.title': searchRegex },
       ];
     }
 
